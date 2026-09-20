@@ -205,9 +205,10 @@
                     </div>
                 </div>
             </div>
-        
+        </div>
+
         <!-- ПРАВАЯ ЧАСТЬ (АВТОРИЗАЦИЯ) -->
-        <div class="nav-auth" id="nav-auth">
+        <div class="nav-auth" id="nav-auth" style="margin-left: auto;">
             <button class="twitch-btn" onclick="loginTwitch()">Войти через Twitch</button>
         </div>
     </nav>
@@ -445,14 +446,14 @@
                     const uInfo = getUserInfo(currentUser.login, currentUser.color);
                     
                     document.getElementById('nav-auth').innerHTML = `
-                        <div class="user-profile-neon">
-                            <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                        <div class="user-profile-neon" style="cursor: pointer;" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">
+                            <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color};">
                                 <img src="${currentUser.profile_image_url}" class="user-avatar">
                             </div>
                             <div class="profile-info">
                                 <div class="profile-top">
                                     <span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color};">${currentUser.display_name}</span>
-                                    <button class="logout-neon" onclick="logoutTwitch()">Выйти</button>
+                                    <button class="logout-neon" onclick="event.stopPropagation(); logoutTwitch();" title="Выйти из аккаунта">Выйти</button>
                                 </div>
                                 <div class="profile-bottom">
                                     ${uInfo.badge}
