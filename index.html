@@ -152,7 +152,6 @@
         /* ВНУТРЕННОСТИ ПАНЕЛИ */
         .theory-container { background: transparent; border: none; padding: 0; }
         .loading { font-size: 24px; color: #829c73; text-align: center; margin-top: 50px; width: 100%; grid-column: 1 / -1; }
-        body.is-admin .me-element { display: none !important; }
         
         #dynamic-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(40px) brightness(0.2); opacity: 0; z-index: -1; pointer-events: none; transition: opacity 0.5s ease, background-image 0.5s ease; }
         #dynamic-bg.active { opacity: 1; }
@@ -180,16 +179,24 @@
             </div>
             
             <!-- ЛОКАЛЬНОЕ МЕНЮ ИГР -->
-            <div style="display: flex; gap: 25px; align-items: center;">
-                <a href="games-tierlist.html" class="nav-btn btn-tier">Тир-лист</a>
+            <div style="display: flex; gap: 20px; align-items: center;">
                 <a href="index.html" class="nav-btn active" style="color: #ffd700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.5); --btn-color: #ffd700;">Хаб</a>
-                
-                <!-- Кнопка Зрителей для вызова Зала Славы -->
+                <a href="games-tierlist.html" class="nav-btn btn-tier">Тир-лист</a>
                 <button onclick="openLeaderboard()" class="nav-btn" style="--btn-color: #89b4fa;">Зрители</button>
                 
+                <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВИЗУАЛА -->
                 <div class="visual-dropdown" id="visual-dropdown">
                     <button class="nav-btn btn-visual" onclick="toggleVisualMenu()">Визуал</button>
                     <div class="visual-dropdown-content">
+                        <div class="mode-toggle" style="margin: 0; justify-content: center;">
+                            <span id="label-score" class="mode-label inactive" onclick="document.getElementById('display-mode-switch').click()">123</span>
+                            <label class="switch">
+                                <input type="checkbox" id="display-mode-switch" onchange="toggleDisplayMode()">
+                                <span class="slider"></span>
+                            </label>
+                            <span id="label-tier" class="mode-label active" style="color: #ffd700;" onclick="document.getElementById('display-mode-switch').click()">S-F</span>
+                        </div>
+                        <div style="border-top: 1px dashed #283325; margin: 5px 0;"></div>
                         <div class="role-toggles" style="margin: 0; justify-content: center; flex-wrap: wrap;">
                             <button id="toggle-streamer" class="role-toggle-btn active streamer" onclick="toggleRoleVis('streamer')">Стример</button>
                             <button id="toggle-me" class="role-toggle-btn active me" onclick="toggleRoleVis('me')">Я</button>
@@ -198,7 +205,6 @@
                     </div>
                 </div>
             </div>
-        </div>
         
         <!-- ПРАВАЯ ЧАСТЬ (АВТОРИЗАЦИЯ) -->
         <div class="nav-auth" id="nav-auth">
@@ -678,7 +684,7 @@
 
                 const strBoxHtml = visRoles.streamer ? getBoxHtml('streamer', 'Стример', valStr) : '';
                 const chatBoxHtml = visRoles.chat ? getBoxHtml('chat', 'Чат', valChat) : '';
-                const meBoxHtml = (!isStreamer && visRoles.me) ? getBoxHtml('me', 'Я', valMe) : '';
+                const meBoxHtml = visRoles.me ? getBoxHtml('me', 'Я', valMe) : '';
 
                 const cardHtml = `
                 <div class="card-container" id="card-${safeDomId}" data-cover="${safeCoverUrl}" onmouseenter="openHubPreview(${index})" onmouseleave="closeHubPreview()" onclick="window.location.href='${detailsLink}'" style="--card-color: #283325; --card-border: rgba(40, 51, 37, 0.8); --card-shadow: rgba(0,0,0,0.5); --card-shadow-hover: rgba(166, 227, 161, 0.25);">
@@ -840,22 +846,23 @@
             document.getElementById('hub-preview-theory').innerHTML = `
                 <div style="display: flex; justify-content: space-between; gap: 10px; width: 100%;">
                     ${visRoles.streamer ? createStatCol('Стример', radarColors[0].border, s.streamer.avgTheory, s.streamer, false) : ''}
-                    ${(!isStreamer && visRoles.me) ? createStatCol('Я', radarColors[2].border, s.me.avgTheory, s.me, true) : ''}
+                    ${visRoles.me ? createStatCol('Я', radarColors[2].border, s.me.avgTheory, s.me, true) : ''}
                     ${visRoles.chat ? createStatCol('Чат', radarColors[1].border, s.chat.avgTheory, s.chat, false) : ''}
                 </div>
             `;
 
             const ctx = document.getElementById('hub-previewChart').getContext('2d');
             const datasets = [
-                { data: [s.streamer.visuals, s.streamer.gameplay, s.streamer.sound, s.streamer.tech, s.streamer.atmosphere], backgroundColor: radarColors[0].bg, borderColor: radarColors[0].border, pointBackgroundColor: radarColors[0].border, borderWidth: 2, pointRadius: 2 },
-                { data: [s.chat.visuals, s.chat.gameplay, s.chat.sound, s.chat.tech, s.chat.atmosphere], backgroundColor: radarColors[1].bg, borderColor: radarColors[1].border, pointBackgroundColor: radarColors[1].border, borderWidth: 2, pointRadius: 2 }
+                { data: [s.streamer.visuals, s.streamer.gameplay, s.streamer.sound, s.streamer.tech, s.streamer.atmosphere], backgroundColor: radarColors[0].bg, borderColor: radarColors[0].border, pointBackgroundColor: radarColors[0].border, borderWidth: 2, pointRadius: 2, hidden: !visRoles.streamer },
+                { data: [s.chat.visuals, s.chat.gameplay, s.chat.sound, s.chat.tech, s.chat.atmosphere], backgroundColor: radarColors[1].bg, borderColor: radarColors[1].border, pointBackgroundColor: radarColors[1].border, borderWidth: 2, pointRadius: 2, hidden: !visRoles.chat },
+                { data: [s.me.visuals, s.me.gameplay, s.me.sound, s.me.tech, s.me.atmosphere], backgroundColor: radarColors[2].bg, borderColor: radarColors[2].border, pointBackgroundColor: radarColors[2].border, borderWidth: 2, pointRadius: 2, hidden: !visRoles.me }
             ];
-            if (!isStreamer) datasets.push({ data: [s.me.visuals, s.me.gameplay, s.me.sound, s.me.tech, s.me.atmosphere], backgroundColor: radarColors[2].bg, borderColor: radarColors[2].border, pointBackgroundColor: radarColors[2].border, borderWidth: 2, pointRadius: 2 });
 
             if (hubRadarChart) {
                 hubRadarChart.data.datasets = datasets;
                 hubRadarChart.update();
             } else {
+                // ... создание графика
                 hubRadarChart = new Chart(ctx, {
                     type: 'radar',
                     data: { labels: ['Визуал', 'Геймплей', 'Звук', 'Техника', 'Атмосфера'], datasets: datasets },
