@@ -98,6 +98,27 @@
         .top-nav, .nav-logo, .board-title, .tier-board, .board-header {
             transition: color 0.5s ease, text-shadow 0.5s ease, border-color 0.5s ease !important;
         }
+
+        /* ПРОФИЛЬ TWITCH В ШАПКЕ */
+        .user-profile-neon { display: flex; align-items: center; gap: 18px; background: rgba(15, 20, 15, 0.2); backdrop-filter: blur(16px); padding: 10px 25px 10px 10px; border-radius: 12px; border: 1px solid var(--theme-panel-border, rgba(166, 227, 161, 0.15)); box-shadow: 0 8px 32px rgba(0,0,0,0.5); transition: 0.5s; }
+        .user-profile-neon:hover { background: rgba(15, 20, 15, 0.3); border-color: rgba(166, 227, 161, 0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 15px rgba(166, 227, 161, 0.1); }
+        .avatar-glow-wrap { position: relative; display: flex; justify-content: center; align-items: center; }
+        .avatar-glow-wrap::before { content: ''; position: absolute; width: 120%; height: 120%; border-radius: 50%; background: var(--user-color, #a6e3a1); filter: blur(10px); opacity: 0.3; transition: 0.3s; }
+        .user-profile-neon:hover .avatar-glow-wrap::before { opacity: 0.6; }
+        .user-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--user-color, #a6e3a1); position: relative; z-index: 2; object-fit: cover; }
+        .profile-info { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+        .profile-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+        .profile-name-top { font-family: 'Neucha', cursive; font-size: 16px; font-weight: bold; letter-spacing: 1px; line-height: 1; }
+        .profile-bottom { display: flex; align-items: center; gap: 15px; }
+        .wallet-item { display: flex; align-items: center; gap: 6px; font-size: 18px; font-weight: bold; line-height: 1; text-shadow: 1px 1px 2px #000; }
+        .wallet-item img { width: 18px; height: 18px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+        .logout-neon { background: transparent; border: none; color: rgba(255, 85, 85, 0.6); font-family: 'Neucha', cursive; font-size: 15px; text-transform: uppercase; font-weight: bold; cursor: pointer; transition: 0.3s; padding: 0; line-height: 1;}
+        .logout-neon:hover { color: #ff5555; text-shadow: 0 0 12px rgba(255, 85, 85, 0.8); transform: scale(1.05); }
+        .role-badge { display: inline-flex; align-items: center; justify-content: center; padding: 2px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .role-sub { background: #6441a5; color: #fff; border: 1px solid #4a307a; } 
+        .role-vip { background: #e05e85; color: #fff; border: 1px solid #b83d63; }
+        .role-f { background: #333333; color: #a4b09c; border: 1px solid #222; }
+
     </style>
 </head>
 <body>
@@ -191,14 +212,38 @@
     <script>
 
         const TWITCH_CLIENT_ID = 'gko3y2nhxg0ocvte0ru970pbau3eiq';
-        const REDIRECT_URI = 'https://skinnystreams04-ai.github.io/Game/index.html'; // или твой путь к играм
+        const REDIRECT_URI = 'https://skinnystreams04-ai.github.io/Game/index.html'; 
+        const FIREBASE_BASE = 'https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app';
+        let currentUser = null;
         window.globalUsersDB = {};
 
         function loginTwitch() { window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=`; }
         function logoutTwitch() { try { localStorage.removeItem('twitch_token'); } catch(e){} location.reload(); }
 
+        function getUserInfo(username, fallbackTwitchColor) {
+            const lowerName = username.toLowerCase();
+            const dbUser = window.globalUsersDB[lowerName]; 
+            let r = "F"; let g = 0; let t = 0; let c = fallbackTwitchColor || '#a4b09c';
+            if (dbUser) {
+                if (dbUser.role) r = dbUser.role.toUpperCase();
+                if (dbUser.wallet_gold) g = dbUser.wallet_gold;
+                if (dbUser.wallet_tickets) t = dbUser.wallet_tickets;
+                if (dbUser.color && dbUser.color.trim() !== "") c = dbUser.color;
+            }
+            let badgeHtml = `<span class="role-badge role-f">FOLLOW</span>`;
+            if (r === 'SUB' || r === 'SUBSCRIBER') badgeHtml = `<span class="role-badge role-sub">SUB</span>`;
+            else if (r === 'VIP') badgeHtml = `<span class="role-badge role-vip">VIP</span>`;
+            return { role: r, gold: g, tickets: t, color: c, badge: badgeHtml };
+        }
+
         async function checkTwitchAuth() {
             try {
+                // Подгружаем глобальную базу для билетов и бейджей
+                try {
+                    const dbRes = await fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' });
+                    if (dbRes.ok) window.globalUsersDB = (await dbRes.json()) || {};
+                } catch(e) {}
+
                 const hash = window.location.hash;
                 let token = null;
                 try { token = localStorage.getItem('twitch_token'); } catch(e){}
@@ -212,7 +257,7 @@
                 if (token) {
                     const res = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } });
                     if (res.status === 401) { try { localStorage.removeItem('twitch_token'); } catch(e){} return; }
-                    let currentUser = (await res.json()).data[0];
+                    currentUser = (await res.json()).data[0];
 
                     try {
                         const colorRes = await fetch(`https://api.twitch.tv/helix/chat/color?user_id=${currentUser.id}`, { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } });
@@ -220,12 +265,27 @@
                         currentUser.color = (colorData.data && colorData.data[0] && colorData.data[0].color) ? colorData.data[0].color : null;
                     } catch(e) {}
                     
+                    const uInfo = getUserInfo(currentUser.login, currentUser.color);
+                    
                     document.getElementById('nav-auth').innerHTML = `
-                        <div class="user-profile-neon" style="display: flex; align-items: center; gap: 18px; background: rgba(15, 20, 15, 0.2); backdrop-filter: blur(16px); padding: 10px 25px 10px 10px; border-radius: 12px; border: 1px solid rgba(166,227,161,0.2);">
-                            <img src="${currentUser.profile_image_url}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #a6e3a1;">
-                            <div style="display: flex; flex-direction: column;">
-                                <span style="color: #fff; font-weight: bold; font-size: 16px;">${currentUser.display_name}</span>
-                                <button class="logout-neon" onclick="logoutTwitch()" style="background:none; border:none; color:#ff5555; cursor:pointer; font-family:inherit; text-align:left; padding:0; font-size:13px;">Выйти</button>
+                        <div class="user-profile-neon">
+                            <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">
+                                <img src="${currentUser.profile_image_url}" class="user-avatar">
+                            </div>
+                            <div class="profile-info">
+                                <div class="profile-top">
+                                    <span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.filter='brightness(1.3)'" onmouseout="this.style.filter='none'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">${currentUser.display_name}</span>
+                                    <button class="logout-neon" onclick="logoutTwitch()">Выйти</button>
+                                </div>
+                                <div class="profile-bottom">
+                                    ${uInfo.badge}
+                                    <div class="wallet-item" style="color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);">
+                                        <img src="icons/BILET_GOLD.png"> <span>${uInfo.gold}</span>
+                                    </div>
+                                    <div class="wallet-item" style="color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.3);">
+                                        <img src="icons/BILET.png"> <span>${uInfo.tickets}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
