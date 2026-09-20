@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль Пользователя</title>
+    <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --theme-primary: #a6e3a1; 
+            --theme-glow: rgba(166, 227, 161, 0.5); 
+            --theme-panel-border: #283325;
+            --btn-color: #a6e3a1;
+        }
+
+        body { margin: 0; padding: 0 0 40px 0; font-family: 'Neucha', cursive, sans-serif; background-color: #0b0d0a; color: #a4b09c; min-height: 100vh; overflow-x: hidden; }
+
+        /* ШАПКА */
+        .top-nav { background: #0b0d0a; border-bottom: 2px solid var(--theme-panel-border); padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        .nav-logo { color: var(--theme-primary); font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; text-shadow: 0 0 10px var(--theme-glow); }
+        
+        .nav-btn { background: transparent; border: none; color: #a4b09c; padding: 5px 0; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; position: relative; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-family: inherit; }
+        .nav-btn::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -6px; left: 50%; background-color: var(--btn-color, #a6e3a1); transition: 0.3s; transform: translateX(-50%); box-shadow: 0 0 8px var(--btn-color, #a6e3a1); }
+        .nav-btn:hover { color: var(--btn-color, #a6e3a1); text-shadow: 0 0 10px var(--btn-color, #a6e3a1); }
+        .nav-btn:hover::after { width: 100%; }
+
+        /* ПРОФИЛЬНЫЙ БЛОК (ШАПКА ПРОФИЛЯ) */
+        .profile-header-container { max-width: 1000px; margin: 40px auto 20px auto; background: rgba(14, 17, 13, 0.6); backdrop-filter: blur(10px); border: 2px solid var(--theme-panel-border); border-radius: 16px; padding: 40px; display: flex; gap: 30px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .ph-avatar-wrap { position: relative; display: flex; justify-content: center; align-items: center; }
+        .ph-avatar-wrap::before { content: ''; position: absolute; width: 120%; height: 120%; border-radius: 50%; background: var(--user-color, #a6e3a1); filter: blur(20px); opacity: 0.3; }
+        .ph-avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--user-color, #a6e3a1); position: relative; z-index: 2; object-fit: cover; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        
+        .ph-info { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .ph-name { color: #fff; font-size: 36px; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 15px var(--user-color, #a6e3a1); margin: 0; line-height: 1; }
+        .ph-status { font-family: sans-serif; font-size: 14px; font-weight: bold; color: #6b7a62; display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .status-online { background: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; }
+        .status-offline { background: #555; }
+        
+        .ph-stats { display: flex; gap: 20px; margin-top: 10px; }
+        .wallet-item { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: bold; background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--theme-panel-border); }
+        .wallet-item img { width: 22px; height: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+        .role-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; border-radius: 6px; font-size: 14px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.5); height: fit-content; }
+        .role-sub { background: #6441a5; color: #fff; border: 1px solid #4a307a; } 
+        .role-vip { background: #e05e85; color: #fff; border: 1px solid #b83d63; } 
+        .role-f { background: #333333; color: #a4b09c; border: 1px solid #222; }
+
+        /* ВКАЛДКИ И КОНТЕНТ */
+        .tabs-container { max-width: 1000px; margin: 0 auto; display: flex; gap: 15px; border-bottom: 2px solid var(--theme-panel-border); padding-bottom: 10px; margin-bottom: 30px; }
+        .tab-btn { background: transparent; border: none; color: #6b7a62; font-family: inherit; font-size: 24px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.3s; padding: 5px 15px; position: relative; outline: none; }
+        .tab-btn:hover { color: #c4d1b8; }
+        .tab-btn.active { color: var(--theme-primary); text-shadow: 0 0 10px var(--theme-glow); }
+        .tab-btn.active::after { content: ''; position: absolute; width: 100%; height: 3px; bottom: -12px; left: 0; background-color: var(--theme-primary); box-shadow: 0 0 10px var(--theme-glow); }
+
+        .tab-content { max-width: 1000px; margin: 0 auto; display: none; flex-direction: column; gap: 20px; }
+        .tab-content.active { display: flex; }
+
+        /* СТАТИСТИКА ВКЛАДКИ */
+        .summary-bar { display: flex; gap: 20px; margin-bottom: 10px; }
+        .summary-box { flex: 1; background: rgba(14, 17, 13, 0.4); border: 1px solid var(--theme-panel-border); border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .sb-title { color: #6b7a62; font-size: 16px; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; }
+        .sb-value { color: #fff; font-size: 32px; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .sb-value span { font-size: 16px; color: #a4b09c; }
+
+        /* СПИСОК ОЦЕНОК */
+        .ratings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .rating-card { display: flex; background: rgba(14, 17, 13, 0.6); border: 1px solid var(--theme-panel-border); border-radius: 8px; overflow: hidden; transition: 0.3s; text-decoration: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .rating-card:hover { transform: translateY(-3px); border-color: var(--theme-primary); box-shadow: 0 10px 20px rgba(0,0,0,0.8), 0 0 15px var(--theme-glow); }
+        .rc-cover { width: 80px; height: 110px; object-fit: cover; border-right: 1px solid var(--theme-panel-border); }
+        .rc-info { padding: 15px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
+        .rc-title { color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; text-shadow: 1px 1px 2px #000; }
+        .rc-score { color: var(--theme-primary); font-size: 24px; font-weight: bold; text-shadow: 0 0 10px var(--theme-glow); }
+        .rc-score span { font-size: 14px; color: #6b7a62; text-shadow: none; }
+
+        .loading { text-align: center; color: #829c73; font-size: 24px; margin-top: 50px; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div style="display: flex; align-items: center; gap: 40px;">
+            <a href="index.html" class="nav-logo">Skinwalker</a>
+            <div style="display: flex; gap: 20px;">
+                <a href="games-index.html" class="nav-btn" style="--btn-color: #ffd700;">Игры</a>
+                <!-- Сюда можешь вставить ссылку на аниме-хаб, если нужно -->
+            </div>
+        </div>
+    </nav>
+
+    <div id="loading" class="loading">Поиск архивов пользователя...</div>
+
+    <div id="profile-wrap" style="display: none;">
+        <!-- ШАПКА ПРОФИЛЯ -->
+        <div class="profile-header-container">
+            <div class="ph-avatar-wrap" id="ph-avatar-wrap">
+                <img id="ph-avatar" src="" class="ph-avatar">
+            </div>
+            <div class="ph-info">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1 class="ph-name" id="ph-name">Загрузка...</h1>
+                    <div id="ph-badge"></div>
+                </div>
+                <div class="ph-status" id="ph-status"></div>
+                <div class="ph-stats">
+                    <div class="wallet-item" style="color: #ffd700;"><img src="icons/BILET_GOLD.png" onerror="this.style.display='none'"> <span id="ph-gold">0</span></div>
+                    <div class="wallet-item" style="color: #a6e3a1;"><img src="icons/BILET.png" onerror="this.style.display='none'"> <span id="ph-tickets">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКИ -->
+        <div class="tabs-container">
+            <button class="tab-btn active" id="tab-btn-games" onclick="switchTab('games')">Игры</button>
+            <button class="tab-btn" id="tab-btn-anime" onclick="switchTab('anime')">Аниме</button>
+        </div>
+
+        <!-- КОНТЕНТ: ИГРЫ -->
+        <div id="tab-games" class="tab-content active">
+            <div class="summary-bar">
+                <div class="summary-box"><div class="sb-title">Оценено игр</div><div class="sb-value" id="g-count">0</div></div>
+                <div class="summary-box"><div class="sb-title">Средняя оценка</div><div class="sb-value" id="g-avg">0.0 <span>/ 10</span></div></div>
+            </div>
+            <div class="ratings-grid" id="games-grid"></div>
+        </div>
+
+        <!-- КОНТЕНТ: АНИМЕ -->
+        <div id="tab-anime" class="tab-content">
+            <div class="summary-bar">
+                <div class="summary-box"><div class="sb-title">Оценено сезонов</div><div class="sb-value" id="a-count">0</div></div>
+                <div class="summary-box"><div class="sb-title">Средняя оценка</div><div class="sb-value" id="a-avg">0.0 <span>/ 10</span></div></div>
+            </div>
+            <div class="ratings-grid" id="anime-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_BASE = 'https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app';
+        let targetUserId = null;
+
+        function getScoreColor(score) {
+            const numScore = Number(score) || 0;
+            if (numScore === 0) return '#a4b09c';
+            if (numScore <= 5.5) { let p = Math.max(0, (numScore - 1) / 4.5); return `rgb(${Math.round(205 + p * 5)}, ${Math.round(115 + p * 100)}, ${Math.round(50 + p * 170)})`; }
+            let p = Math.min(1, (numScore - 5.5) / 4.5); return `rgb(${Math.round(210 + p * 45)}, ${Math.round(215 + p * 20)}, ${Math.round(220 + p * -200)})`;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+        }
+
+        async function loadProfileData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            targetUserId = urlParams.get('user');
+            
+            if (!targetUserId) {
+                document.getElementById('loading').innerText = 'Ошибка: Пользователь не указан.';
+                return;
+            }
+
+            try {
+                // 1. Грузим глобального юзера
+                const uRes = await fetch(`${FIREBASE_BASE}/global_users/${targetUserId}.json`);
+                const uData = await uRes.json() || {};
+                
+                // 2. Грузим базы для игр
+                const gRes = await fetch(`${FIREBASE_BASE}/games_db.json`);
+                const gamesDb = await gRes.json() || {};
+                const gCommRes = await fetch(`${FIREBASE_BASE}/games_community_db.json`);
+                const gamesComm = await gCommRes.json() || {};
+
+                // 3. Грузим базы для аниме
+                const aRes = await fetch(`${FIREBASE_BASE}/anime_db.json`);
+                const animeDb = await aRes.json() || {};
+                const aCommRes = await fetch(`${FIREBASE_BASE}/community_db.json`);
+                const animeComm = await aCommRes.json() || {};
+
+                // --- Заполняем шапку ---
+                const uName = uData.displayName || "Неизвестный";
+                const uColor = uData.color || "#a4b09c";
+                const uRole = (uData.role || "f").toUpperCase();
+                
+                document.getElementById('ph-name').innerText = uName;
+                document.getElementById('ph-name').style.color = uColor;
+                document.getElementById('ph-name').style.textShadow = `0 0 15px ${uColor}80`;
+                
+                document.getElementById('ph-avatar').src = uData.profileImage || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/41780b5a-def8-11e9-94d9-784f43822e80-profile_image-70x70.png';
+                document.getElementById('ph-avatar').style.borderColor = uColor;
+                document.getElementById('ph-avatar-wrap').style.setProperty('--user-color', uColor);
+
+                let badge = `<span class="role-badge role-f">FOLLOW</span>`;
+                if (uRole === 'SUB' || uRole === 'SUBSCRIBER') badge = `<span class="role-badge role-sub">SUB</span>`;
+                else if (uRole === 'VIP') badge = `<span class="role-badge role-vip">VIP</span>`;
+                document.getElementById('ph-badge').innerHTML = badge;
+
+                document.getElementById('ph-gold').innerText = uData.wallet_gold || 0;
+                document.getElementById('ph-tickets').innerText = uData.wallet_tickets || 0;
+
+                const isOnline = uData.last_online && (Date.now() - uData.last_online < 150000);
+                document.getElementById('ph-status').innerHTML = isOnline 
+                    ? '<div class="status-dot status-online"></div><span style="color:#a6e3a1;">В сети</span>' 
+                    : '<div class="status-dot status-offline"></div><span>Не в сети</span>';
+
+                // --- Собираем статистику ИГР ---
+                let gCount = 0; let gSum = 0; let gHtml = '';
+                for (const [gameId, gameInfo] of Object.entries(gamesDb)) {
+                    const userRating = gamesComm[gameId]?.ratings?.[targetUserId];
+                    if (userRating && Number(userRating.overall) > 0) {
+                        const ovr = Number(userRating.overall);
+                        gCount++; gSum += ovr;
+                        const cColor = getScoreColor(ovr);
+                        gHtml += `
+                            <a href="games-page.html?id=${gameId}" class="rating-card">
+                                <img src="${gameInfo.coverUrl}" class="rc-cover">
+                                <div class="rc-info">
+                                    <div class="rc-title">${gameInfo.title || gameId}</div>
+                                    <div class="rc-score" style="color: ${cColor}; text-shadow: 0 0 10px ${cColor}80;">${ovr} <span>/ 10</span></div>
+                                </div>
+                            </a>`;
+                    }
+                }
+                document.getElementById('g-count').innerText = gCount;
+                document.getElementById('g-avg').innerHTML = gCount > 0 ? `${(gSum/gCount).toFixed(1)} <span>/ 10</span>` : `0 <span>/ 10</span>`;
+                document.getElementById('games-grid').innerHTML = gHtml || '<div style="color:#6b7a62; padding: 20px;">Нет оценок игр.</div>';
+
+                // --- Собираем статистику АНИМЕ ---
+                let aCount = 0; let aSum = 0; let aHtml = '';
+                for (const [franchiseId, seasons] of Object.entries(animeDb)) {
+                    for (const [seasonId, seasonInfo] of Object.entries(seasons)) {
+                        const userRating = animeComm[franchiseId]?.[seasonId]?.ratings?.[targetUserId];
+                        if (userRating && Number(userRating.overall) > 0) {
+                            const ovr = Number(userRating.overall);
+                            aCount++; aSum += ovr;
+                            const cColor = getScoreColor(ovr);
+                            aHtml += `
+                                <a href="Anime-Page.html?id=${franchiseId}" class="rating-card">
+                                    <img src="${seasonInfo.coverUrl}" class="rc-cover">
+                                    <div class="rc-info">
+                                        <div class="rc-title">${seasonInfo.info?.title || franchiseId}</div>
+                                        <div class="rc-score" style="color: ${cColor}; text-shadow: 0 0 10px ${cColor}80;">${ovr} <span>/ 10</span></div>
+                                    </div>
+                                </a>`;
+                        }
+                    }
+                }
+                document.getElementById('a-count').innerText = aCount;
+                document.getElementById('a-avg').innerHTML = aCount > 0 ? `${(aSum/aCount).toFixed(1)} <span>/ 10</span>` : `0 <span>/ 10</span>`;
+                document.getElementById('anime-grid').innerHTML = aHtml || '<div style="color:#6b7a62; padding: 20px;">Нет оценок аниме.</div>';
+
+                // Показываем профиль
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('profile-wrap').style.display = 'block';
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loading').innerText = 'Не удалось загрузить данные пользователя.';
+            }
+        }
+
+        window.onload = loadProfileData;
+    </script>
+</body>
+</html>

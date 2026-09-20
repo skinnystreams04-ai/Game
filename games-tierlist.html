@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игры - Тир-лист</title>
+    <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игры - Тир-лист</title>
+    <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <style>
+        /* ГЛОБАЛЬНЫЕ ЦВЕТА */
+        :root {
+            --theme-primary: #a6e3a1;
+            --theme-glow: rgba(166, 227, 161, 0.5);
+            --theme-panel-border: #283325;
+            --btn-color: #a6e3a1;
+        }
+
+        body { margin: 0; font-family: 'Neucha', cursive; background: #0b0d0a; color: #a4b09c; min-height: 100vh; padding-bottom: 50px; }
+
+        /* ШАПКА */
+        .top-nav { background: #0b0d0a; border-bottom: 2px solid var(--theme-panel-border); padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); position: relative; z-index: 1000; transition: border-color 0.5s ease; }
+        
+        /* Логотип теперь идеально совпадает с заголовком тир-листа */
+        .nav-logo { color: var(--theme-primary); font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; text-shadow: 0 0 10px var(--theme-glow); transition: color 0.5s ease, text-shadow 0.5s ease; cursor: pointer; }
+        .nav-logo:hover { filter: brightness(1.2); }
+        
+        .nav-btn { background: transparent; border: none; color: #a4b09c; padding: 5px 0; font-family: inherit; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; position: relative; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; outline: none; }
+        .nav-btn::after { content: ''; position: absolute; width: 0; height: 2px; bottom: 0; left: 50%; background-color: var(--btn-color, #a6e3a1); transition: 0.3s; transform: translateX(-50%); box-shadow: 0 0 8px var(--btn-color, #a6e3a1); }
+        .nav-btn:hover { color: var(--btn-color, #a6e3a1); text-shadow: 0 0 10px var(--btn-color, #a6e3a1); }
+        .nav-btn:hover::after { width: 100%; }
+        
+        /* ПОСТОЯННОЕ ПОДЧЕРКИВАНИЕ ДЛЯ АКТИВНОЙ КНОПКИ */
+        .nav-btn.active::after { width: 100%; }
+
+        .btn-hub:hover { --btn-color: #ffd700; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        .btn-visual:hover { --btn-color: #a6e3a1; color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.5); }
+
+        .nav-auth .twitch-btn { background: #6441a5; color: white; padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 18px; font-weight: bold; cursor: pointer; border: 1px solid #4a307a; transition: 0.2s; letter-spacing: 1px;}
+        .nav-auth .twitch-btn:hover { background: #7d5bbe; box-shadow: 0 0 15px rgba(100, 65, 165, 0.8); }
+
+        /* ОСНОВА ТИР-ЛИСТА */
+        .tier-board { position: relative; margin: 20px 40px; display: flex; flex-direction: column; background: #0b0d0a; border: 1px solid var(--theme-panel-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; transition: border-color 0.5s ease; }
+        .board-header { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: rgba(14, 17, 13, 0.8); border-bottom: 1px solid var(--theme-panel-border); transition: border-color 0.5s ease; }
+        
+        /* ЗАГОЛОВОК (Жестко задали красивый шрифт и увеличили размер) */
+        .board-title { font-family: 'Neucha', cursive; color: var(--theme-primary); font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--theme-glow); transition: color 0.5s ease, text-shadow 0.5s ease; }
+        
+        #tier-content-area { position: relative; z-index: 2; }
+        .tier-row { display: flex; background: rgba(0,0,0,0.2); border-bottom: 1px solid #1a2217; min-height: 140px; transition: background 0.3s, box-shadow 0.3s; }
+        .tier-row:last-child { border-bottom: none; }
+        
+        .tier-label { width: 100px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; flex-shrink: 0; box-shadow: 5px 0 15px rgba(0,0,0,0.5); z-index: 2; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .tier-content { display: flex; flex-wrap: wrap; gap: 12px; padding: 15px; flex: 1; align-content: flex-start; min-height: 120px; transition: 0.3s; }
+        
+        /* БЭКЛОГ */
+        .backlog-container { margin: 20px 40px; background: rgba(14, 17, 13, 0.5); border: 1px dashed var(--theme-panel-border); border-radius: 12px; padding: 25px 15px 15px 15px; min-height: 130px; position: relative; transition: border-color 0.5s ease; display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; z-index: 2; }
+        .backlog-title { position: absolute; top: -12px; left: 30px; background: #0b0d0a; padding: 0 15px; color: var(--theme-primary); font-size: 16px; font-weight: bold; text-transform: uppercase; border: 1px solid var(--theme-panel-border); border-radius: 6px; letter-spacing: 1px; transition: color 0.5s ease, border-color 0.5s ease; }
+
+        /* КАРТОЧКА ИГРЫ */
+        .tier-item { width: 120px; height: 180px; border-radius: 6px; cursor: grab; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background-size: cover; background-position: center; transition: all 0.2s ease-out; border: 2px solid transparent; }
+        .tier-item:hover { transform: scale(1.1) translateY(-5px); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.8), 0 0 15px var(--theme-light, rgba(255,255,255,0.1)); border-color: var(--theme-light, rgba(255,255,255,0.3)); }
+        .tier-item:active { cursor: grabbing; transform: scale(1.05); opacity: 0.9; z-index: 20; box-shadow: 0 0 20px var(--theme-light, #a6e3a1); border-color: var(--theme-light, #a6e3a1); }
+        .tier-item.dragging { opacity: 0.5 !important; transform: scale(1.05); z-index: 99; pointer-events: none; }
+
+        .drag-over { background: rgba(255, 255, 255, 0.03); box-shadow: inset 0 0 30px rgba(0,0,0,0.8); }
+        .drag-over .tier-label { filter: brightness(1.3); transform: scale(1.05); }
+        .backlog-container.drag-over { border-color: #a6e3a1; background: rgba(166, 227, 161, 0.05); }
+
+        .front-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px 6px 6px 6px; box-sizing: border-box; background: linear-gradient(0deg, rgba(11,13,10,1) 0%, rgba(11,13,10,0.8) 50%, transparent 100%); display: flex; flex-direction: column; justify-content: flex-end; pointer-events: none; }
+        .game-title { color: var(--theme-light, #e4e4e4); font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: center; text-shadow: 2px 2px 4px #000, 0 0 10px rgba(0,0,0,0.8); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.1; transition: color 0.3s; }
+
+        /* ДИНАМИЧЕСКИЙ ФОН ВНУТРИ ОКНА */
+        #dynamic-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(40px); opacity: 0; z-index: 0; pointer-events: none; transition: opacity 0.5s ease, background-image 0.5s ease; }
+        #dynamic-bg.active { opacity: 0.15; }
+        /* Плавное перетекание цветов Хамелеона для всей страницы */
+        .top-nav, .nav-logo, .board-title, .tier-board, .board-header {
+            transition: color 0.5s ease, text-shadow 0.5s ease, border-color 0.5s ease !important;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <!-- ЛЕВАЯ ЧАСТЬ -->
+        <div style="display: flex; align-items: center; gap: 40px;">
+            <!-- Логотип берет цвет из CSS-переменной -->
+            <a href="index.html" class="nav-logo">Skinwalker Игры</a>
+            
+            <div style="display: flex; gap: 20px;">
+                <!-- Добавили класс active -->
+                <a href="games-tierlist.html" class="nav-btn active" style="color: #ff4a4a; text-shadow: 0 0 8px rgba(255,74,74,0.5); --btn-color: #ff4a4a;">Тир-лист</a>
+                <a href="index.html" class="nav-btn btn-hub">Хаб</a>
+                <a href="#" class="nav-btn btn-visual">Визуал</a>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ЧАСТЬ -->
+        <div class="nav-auth">
+            <button class="twitch-btn">Войти через Twitch</button>
+        </div>
+    </nav>
+
+    <div class="tier-board" style="position: relative;">
+        <div id="dynamic-bg"></div> <!-- Наш фон теперь живет строго внутри окна -->
+        
+        <div class="board-header" style="position: relative; z-index: 1;">
+            <div class="board-title">Игровой Тир-лист</div>
+        </div>
+        
+        <div id="tier-content-area" style="position: relative; z-index: 1;">
+            
+            <!-- Ряд S -->
+            <div class="tier-row" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" data-tier="S">
+                <div class="tier-label" style="background: #ff4a4a20; border-right: 2px solid #ff4a4a; color: #ff4a4a; text-shadow: 0 0 15px #ff4a4a;">S</div>
+                <div class="tier-content"></div>
+            </div>
+
+            <!-- Ряд A -->
+            <div class="tier-row" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" data-tier="A">
+                <div class="tier-label" style="background: #ffd70020; border-right: 2px solid #ffd700; color: #ffd700; text-shadow: 0 0 15px #ffd700;">A</div>
+                <div class="tier-content"></div>
+            </div>
+
+            <!-- Ряд B -->
+            <div class="tier-row" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" data-tier="B">
+                <div class="tier-label" style="background: #cba6f720; border-right: 2px solid #cba6f7; color: #cba6f7; text-shadow: 0 0 15px #cba6f7;">B</div>
+                <div class="tier-content"></div>
+            </div>
+
+            <!-- Ряд C -->
+            <div class="tier-row" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" data-tier="C">
+                <div class="tier-label" style="background: #89b4fa20; border-right: 2px solid #89b4fa; color: #89b4fa; text-shadow: 0 0 15px #89b4fa;">C</div>
+                <div class="tier-content"></div>
+            </div>
+
+            <!-- Ряд D -->
+            <div class="tier-row" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" data-tier="D">
+                <div class="tier-label" style="background: #a6e3a120; border-right: 2px solid #a6e3a1; color: #a6e3a1; text-shadow: 0 0 15px #a6e3a1;">D</div>
+                <div class="tier-content"></div>
+            </div>
+
+            <!-- Ряд F -->
+            <div class="tier-row" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" data-tier="F">
+                <div class="tier-label" style="background: #88888820; border-right: 2px solid #888888; color: #888888; text-shadow: 0 0 15px #888888;">F</div>
+                <div class="tier-content"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- БЭКЛОГ ИГР -->
+    <div class="backlog-container" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" data-tier="UNRANKED">
+        <div class="backlog-title">Бэклог / Без оценки</div>
+        <!-- Игры будут загружаться сюда через JS -->
+    </div>
+
+    <!-- ЛОГИКА ПЕРЕТАСКИВАНИЯ -->
+    <script>
+        const FIREBASE_DB_URL = "https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app/games_db.json";
+        let gamesData = {};
+
+        // Цвета для горизонтальных линий тиров
+        const tierColors = { 'S': '255, 74, 74', 'A': '255, 215, 0', 'B': '203, 166, 247', 'C': '137, 180, 250', 'D': '166, 227, 161', 'F': '136, 136, 136' };
+
+        // --- 1. ЗАГРУЗКА И ОТРИСОВКА ---
+        async function loadTierList() {
+            try {
+                const res = await fetch(FIREBASE_DB_URL);
+                gamesData = await res.json() || {};
+                
+                document.querySelectorAll('.tier-content').forEach(el => el.innerHTML = '');
+                const backlog = document.querySelector('.backlog-container');
+                backlog.innerHTML = '<div class="backlog-title">Бэклог / Без оценки</div>';
+
+                // Красим горизонтальные линии под каждым тиром с отступом 100px
+                document.querySelectorAll('.tier-row').forEach(row => {
+                    const tier = row.getAttribute('data-tier');
+                    const rgb = tierColors[tier];
+                    if (rgb) {
+                        row.style.background = `linear-gradient(90deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 100px, rgba(${rgb}, 0.12) 100px, rgba(0,0,0,0.2) 600px)`;
+                        row.style.borderBottom = `1px solid rgba(${rgb}, 0.3)`; 
+                    }
+                });
+
+                const gamesArray = Object.entries(gamesData).map(([id, data]) => ({ id, ...data }));
+                gamesArray.sort((a, b) => (a.scores?.position || 999) - (b.scores?.position || 999));
+
+                gamesArray.forEach(game => {
+                    const tier = game.scores?.tier || 'UNRANKED';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'tier-item';
+                    card.draggable = true;
+                    card.id = game.id;
+                    card.title = game.title;
+                    card.style.backgroundImage = `url('${game.coverUrl}')`;
+                    card.setAttribute('data-cover', game.coverUrl); 
+                    
+                    // Железобетонная привязка событий перетаскивания прямо к карточке
+                    card.addEventListener('dragstart', drag);
+                    card.addEventListener('dragend', dragEnd);
+                    
+                    // Умный клик: переходим на страницу игры, только если это не перетаскивание
+                    card.addEventListener('click', (e) => {
+                        if (window.isDraggingCard) {
+                            e.preventDefault();
+                            return; 
+                        }
+                        window.location.href = `games-page.html?id=${encodeURIComponent(game.id).replace(/'/g, "%27")}`;
+                    });
+                    
+                    // --- ДИНАМИЧЕСКИЙ ФОН И ПЕРЕКРАСКА (ХАМЕЛЕОН) ---
+                    card.addEventListener('mouseenter', () => {
+                        if (window.isDraggingCard) return; 
+                        
+                        const bg = document.getElementById('dynamic-bg');
+                        bg.style.backgroundImage = `url('${game.coverUrl}')`;
+                        bg.classList.add('active');
+
+                        if (card.dataset.rgb) {
+                            const rgb = card.dataset.rgb;
+                            document.documentElement.style.setProperty('--theme-primary', `rgb(${rgb})`);
+                            document.documentElement.style.setProperty('--theme-glow', `rgba(${rgb}, 0.5)`);
+                            document.documentElement.style.setProperty('--theme-panel-border', `rgba(${rgb}, 0.4)`);
+                            
+                            // Красим логотип
+                            document.documentElement.style.setProperty('--theme-logo', `rgb(${rgb})`);
+                            document.documentElement.style.setProperty('--theme-logo-glow', `rgba(${rgb}, 0.5)`);
+                        }
+                    });
+                    
+                    card.addEventListener('mouseleave', () => {
+                        document.getElementById('dynamic-bg').classList.remove('active');
+                        
+                        document.documentElement.style.removeProperty('--theme-primary');
+                        document.documentElement.style.removeProperty('--theme-glow');
+                        document.documentElement.style.removeProperty('--theme-panel-border');
+                        
+                        // Возвращаем логотипу родной цвет
+                        document.documentElement.style.removeProperty('--theme-logo');
+                        document.documentElement.style.removeProperty('--theme-logo-glow');
+                    });
+                    
+                    card.innerHTML = `
+                        <div class="front-overlay">
+                            <div class="game-title">${game.title}</div>
+                        </div>
+                    `;
+
+                    if (tier === 'UNRANKED') {
+                        backlog.appendChild(card);
+                    } else {
+                        const targetRow = document.querySelector(`.tier-row[data-tier="${tier}"] .tier-content`);
+                        if (targetRow) targetRow.appendChild(card);
+                    }
+                });
+
+                extractCoverColors();
+
+            } catch (e) { console.error("Ошибка загрузки базы:", e); }
+        }
+
+        // Красим названия в цвета обложек + Умный обход блокировок (CORS Proxy)
+        function extractCoverColors() {
+            if (typeof ColorThief === 'undefined') return;
+            const colorThief = new ColorThief();
+            
+            document.querySelectorAll('.tier-item').forEach(card => {
+                const imgUrl = card.getAttribute('data-cover');
+                if (!imgUrl) return;
+
+                const processColor = (imgEl) => {
+                    try {
+                        const color = colorThief.getColor(imgEl);
+                        let r = color[0], g = color[1], b = color[2];
+                        const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+                        if (luminance < 90) { r = Math.min(255, r + 80); g = Math.min(255, g + 80); b = Math.min(255, b + 80); }
+                        
+                        card.style.setProperty('--theme-light', `rgb(${r}, ${g}, ${b})`); 
+                        card.dataset.rgb = `${r}, ${g}, ${b}`;
+                    } catch(e) { applyFallback(); }
+                };
+                
+                const applyFallback = () => {
+                    card.style.setProperty('--theme-light', `rgb(166, 227, 161)`);
+                    card.dataset.rgb = `166, 227, 161`; 
+                };
+
+                const hiddenImg = new Image();
+                hiddenImg.crossOrigin = 'Anonymous';
+                
+                hiddenImg.onload = () => processColor(hiddenImg);
+                
+                // Пробуем обойти блокировку, если прямая ссылка не отдает цвет
+                hiddenImg.onerror = function() {
+                    const proxyImg = new Image(); 
+                    proxyImg.crossOrigin = 'Anonymous';
+                    proxyImg.onload = () => processColor(proxyImg);
+                    proxyImg.onerror = function() {
+                        const proxyImg2 = new Image(); 
+                        proxyImg2.crossOrigin = 'Anonymous';
+                        proxyImg2.onload = () => processColor(proxyImg2);
+                        proxyImg2.onerror = applyFallback; 
+                        proxyImg2.src = 'https://wsrv.nl/?url=' + encodeURIComponent(imgUrl);
+                    };
+                    proxyImg.src = 'https://corsproxy.io/?' + encodeURIComponent(imgUrl);
+                };
+                
+                hiddenImg.src = imgUrl + '?bypassCache=' + Date.now();
+            });
+        }
+
+        window.onload = loadTierList;
+
+        // --- 2. МАССОВОЕ СОХРАНЕНИЕ ПОРЯДКА В БАЗУ ---
+        async function updateTierOrder() {
+            const updates = {};
+            document.querySelectorAll('.tier-row').forEach(row => {
+                const tier = row.getAttribute('data-tier');
+                row.querySelectorAll('.tier-item').forEach((card, index) => {
+                    updates[`${card.id}/scores/tier`] = tier;
+                    updates[`${card.id}/scores/position`] = index + 1;
+                });
+            });
+            document.querySelectorAll('.backlog-container .tier-item').forEach(card => {
+                updates[`${card.id}/scores/tier`] = 'UNRANKED';
+                updates[`${card.id}/scores/position`] = 0;
+            });
+
+            try {
+                await fetch(FIREBASE_DB_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
+                console.log("Порядок успешно сохранен в базу!");
+            } catch(e) { console.error("Ошибка сохранения:", e); }
+        }
+
+        // Глобальный флаг, который отличает клик от перетаскивания
+        window.isDraggingCard = false;
+
+        // --- 3. УМНАЯ ФИЗИКА ПЕРЕТАСКИВАНИЯ (С УЧЕТОМ СТРОК) ---
+        function drag(ev) {
+            window.isDraggingCard = true; // Включаем предохранитель: мы начали тащить!
+            
+            const card = ev.target.closest('.tier-item');
+            if (!card) return;
+            
+            ev.dataTransfer.setData("text", card.id);
+            ev.dataTransfer.effectAllowed = "move";
+            
+            setTimeout(() => { card.classList.add('dragging'); }, 0);
+        }
+
+        function dragEnd(ev) {
+            const card = ev.target.closest('.tier-item');
+            if (card) card.classList.remove('dragging');
+            
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            updateTierOrder(); 
+            
+            // Выключаем предохранитель с микро-задержкой, чтобы ложный клик при отпускании мышки не сработал
+            setTimeout(() => { window.isDraggingCard = false; }, 100);
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            let dropzone = ev.target.closest('.tier-row, .backlog-container');
+            
+            if (dropzone) {
+                dropzone.classList.add('drag-over');
+                let targetZone = dropzone.classList.contains('backlog-container') ? dropzone : dropzone.querySelector('.tier-content');
+                
+                // Передаем X и Y для расчета правильного места
+                const afterElement = getDragAfterElement(targetZone, ev.clientX, ev.clientY);
+                const draggable = document.querySelector('.dragging');
+                
+                if (draggable) {
+                    if (afterElement == null) targetZone.appendChild(draggable);
+                    else targetZone.insertBefore(draggable, afterElement);
+                }
+            }
+        }
+
+        function getDragAfterElement(container, x, y) {
+            const draggableElements = [...container.querySelectorAll('.tier-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                
+                // 1. Проверяем, на одной ли мы строке с карточкой по Y (даем запас 15px)
+                const inRow = y >= box.top - 15 && y <= box.bottom + 15;
+                if (!inRow) return closest; 
+                
+                // 2. Если мы на нужной строке, проверяем лево/право по X
+                const offset = x - (box.left + box.width / 2);
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function dragEnter(ev) { ev.preventDefault(); }
+        function dragLeave(ev) {
+            let dropzone = ev.target.closest('.tier-row, .backlog-container');
+            if (dropzone && !dropzone.contains(ev.relatedTarget)) dropzone.classList.remove('drag-over');
+        }
+        function drop(ev) {
+            ev.preventDefault();
+            let dropRow = ev.target.closest('.tier-row, .backlog-container');
+            if (dropRow) dropRow.classList.remove('drag-over');
+        }
+    </script>
+</body>
+</html>

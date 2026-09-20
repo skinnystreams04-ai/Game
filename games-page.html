@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали Игры</title>
+    <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+
+    <style> 
+    :root {
+        --theme-primary: #a6e3a1; 
+        --theme-glow: rgba(166, 227, 161, 0.2); 
+        --theme-panel-bg-top: #101411;
+        --theme-panel-bg-bottom: #080a08;
+        --theme-panel-header: #0b0d0a;
+        --theme-panel-border: #283325;
+    }
+    
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0b0d0a; border-left: 1px solid var(--theme-panel-border); }
+    ::-webkit-scrollbar-thumb { background: #4a5c41; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--theme-primary); box-shadow: 0 0 10px var(--theme-glow); }
+
+    body { margin: 0; padding: 0 0 20px 0; font-family: 'Neucha', cursive, sans-serif; background-color: #0b0d0a; color: #a4b09c; min-width: 1350px; overflow-x: hidden; }
+
+    /* ШАПКА */
+    .top-nav { background: #0b0d0a; border-bottom: 2px solid var(--theme-panel-border); padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+    .nav-logo { color: var(--theme-primary); font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; transition: 0.2s; cursor: pointer; }
+    .nav-logo:hover { filter: brightness(1.2); text-shadow: 0 0 15px var(--theme-glow); }
+    
+    .nav-btn { background: transparent; border: none; color: #a4b09c; padding: 5px 0; font-family: inherit; font-size: 18px; font-weight: bold; cursor: pointer; transition: color 0.5s ease, text-shadow 0.5s ease; position: relative; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; outline: none; }
+        .nav-btn::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -6px; left: 50%; background-color: var(--btn-color, #a6e3a1); transition: width 0.3s ease, background-color 0.5s ease, box-shadow 0.5s ease; transform: translateX(-50%); box-shadow: 0 0 8px var(--btn-color, #a6e3a1); }
+        
+        .nav-btn:hover { color: var(--btn-color, #a6e3a1); text-shadow: 0 0 10px var(--btn-color, #a6e3a1); }
+        .nav-btn:hover::after { width: 100%; }
+        
+        /* Цвета кнопок при наведении */
+        .btn-tier:hover { --btn-color: #ff4a4a; color: #ff4a4a; text-shadow: 0 0 10px rgba(255, 74, 74, 0.5); }
+        .btn-hub:hover { --btn-color: #ffd700; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        .btn-visual:hover { --btn-color: #a6e3a1; color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.5); }
+
+    .nav-auth .twitch-btn { background: #6441a5; color: white; padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 18px; font-weight: bold; cursor: pointer; border: 1px solid #4a307a; transition: 0.2s; letter-spacing: 1px;}
+    .nav-auth .twitch-btn:hover { background: #7d5bbe; box-shadow: 0 0 15px rgba(100, 65, 165, 0.8); }
+
+    /* ПРОФИЛЬ */
+    .user-profile-neon { display: flex; align-items: center; gap: 18px; background: rgba(15, 20, 15, 0.2); backdrop-filter: blur(16px); padding: 10px 25px 10px 10px; border-radius: 12px; border: 1px solid var(--theme-panel-border); box-shadow: 0 8px 32px rgba(0,0,0,0.5); transition: 0.3s ease; }
+    .user-profile-neon:hover { background: rgba(15, 20, 15, 0.3); border-color: rgba(166, 227, 161, 0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 15px rgba(166, 227, 161, 0.1); }
+    .avatar-glow-wrap { position: relative; display: flex; justify-content: center; align-items: center; }
+    .avatar-glow-wrap::before { content: ''; position: absolute; width: 120%; height: 120%; border-radius: 50%; background: var(--user-color, #a6e3a1); filter: blur(10px); opacity: 0.3; transition: 0.3s; }
+    .user-profile-neon:hover .avatar-glow-wrap::before { opacity: 0.6; }
+    .user-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--user-color, #a6e3a1); position: relative; z-index: 2; object-fit: cover; }
+    .profile-info { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+    .profile-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .profile-bottom { display: flex; align-items: center; gap: 15px; }
+    .role-badge { display: inline-flex; align-items: center; justify-content: center; padding: 2px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .role-sub { background: #6441a5; color: #fff; border: 1px solid #4a307a; } 
+    .role-vip { background: #e05e85; color: #fff; border: 1px solid #b83d63; } 
+    .role-f { background: #333333; color: #a4b09c; border: 1px solid #222; } 
+    .wallet-item { display: flex; align-items: center; gap: 6px; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+    .wallet-item img { width: 18px; height: 18px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+    .logout-neon { background: transparent; border: none; color: rgba(255, 85, 85, 0.6); font-family: inherit; font-size: 15px; text-transform: uppercase; font-weight: bold; cursor: pointer; transition: 0.3s; padding: 0; letter-spacing: 1px;}
+    .logout-neon:hover { color: #ff5555; text-shadow: 0 0 12px rgba(255, 85, 85, 0.8); transform: scale(1.05); }
+
+    /* МЕНЮ ВИЗУАЛА */
+    .visual-dropdown { position: relative; display: inline-block; }
+    .visual-dropdown-content { display: none; position: absolute; right: 0; top: 100%; margin-top: 15px; background: rgba(14, 17, 13, 0.95); border: 1px solid #4a5c41; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 2000; min-width: 250px; backdrop-filter: blur(10px); flex-direction: column; gap: 15px; }
+    .visual-dropdown.show .visual-dropdown-content { display: flex; }
+    .mode-toggle { display: flex; align-items: center; gap: 10px; font-size: 18px; justify-content: center; margin: 0; }
+    .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(14, 17, 13, 0.6); border: 1px solid #283325; transition: .4s; border-radius: 34px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #a4b09c; transition: .4s; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+    input:checked + .slider { background-color: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+    input:checked + .slider:before { transform: translateX(22px); background-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
+    .mode-label { font-weight: bold; text-shadow: 1px 1px 2px #000; transition: 0.3s; cursor: pointer; }
+    .mode-label.active { color: #fff; text-shadow: 0 0 8px currentColor; }
+    .mode-label.inactive { color: #6b7a62; }
+    .role-toggles { display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 0; }
+    .role-toggle-btn { background: transparent; border: none; border-bottom: 2px solid rgba(107, 122, 98, 0.3); color: #6b7a62; padding: 4px 2px; font-family: inherit; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; outline: none; }
+    .role-toggle-btn:hover { color: #c4d1b8; border-bottom-color: rgba(196, 209, 184, 0.5); }
+    .role-toggle-btn.active.streamer { color: #cba6f7; border-bottom-color: #cba6f7; text-shadow: 0 0 8px rgba(203, 166, 247, 0.6); }
+    .role-toggle-btn.active.me { color: #a6e3a1; border-bottom-color: #a6e3a1; text-shadow: 0 0 8px rgba(166, 227, 161, 0.6); }
+    .role-toggle-btn.active.chat { color: #b8a87b; border-bottom-color: #b8a87b; text-shadow: 0 0 8px rgba(184, 168, 123, 0.6); }
+
+    /* КАРКАС ПАНЕЛЕЙ */
+    .layout { display: flex; gap: 20px; align-items: stretch; padding: 0 20px; }
+    .col-left { width: 320px; display: flex; flex-direction: column; gap: 20px; }
+    .col-center { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+    .col-right { width: 420px; display: flex; flex-direction: column; gap: 20px; }
+    .col-right .widget-base { height: calc(100vh - 100px); min-height: 750px; }
+    .col-right .widget-content { display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+    
+    .widget-base { background: linear-gradient(180deg, var(--theme-panel-bg-top) 0%, var(--theme-panel-bg-bottom) 100%); border: 2px solid var(--theme-panel-border); border-radius: 6px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; transition: 0.5s; }
+    .widget-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--theme-panel-header); border-bottom: 2px solid var(--theme-panel-border); flex-shrink: 0; transition: 0.5s; }
+    .widget-title { color: var(--theme-primary); font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 10px var(--theme-glow); transition: 0.5s; }
+    .widget-content { padding: 15px; overflow-y: auto; flex: 1; position: relative; scrollbar-width: none; }
+
+    /* ИНФОРМАЦИЯ О ИГРЕ */
+    .cover-img { width: 100%; border-radius: 6px; border: 1px solid #4a5c41; margin-bottom: 12px; }
+    .genre-badge { display: inline-block; background: var(--theme-panel-header); color: #fff; text-shadow: 0 0 8px var(--theme-primary); border: 1px solid var(--theme-primary); padding: 4px 10px; border-radius: 6px; font-size: 15px; font-family: inherit; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 5px var(--theme-glow); transition: 0.5s; white-space: nowrap; letter-spacing: 1px; }
+    .info-row { display: flex; gap: 10px; font-size: 15px; margin-bottom: 6px; border-bottom: 1px dashed var(--theme-panel-border); padding-bottom: 3px; }
+    .info-label { color: var(--theme-primary); opacity: 0.8; font-weight: bold; flex: 0 0 115px; }
+    .info-val { color: #c4d1b8; font-weight: bold; flex: 1; text-align: right; }
+    .synopsis-text { font-size: 16px; line-height: 1.5; color: #c4d1b8; text-align: justify; }
+
+    /* ПЛЕЕР */
+    .season-btn { background: rgba(0,0,0,0.4); border: 1px solid #4a5c41; color: #a4b09c; font-family: inherit; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+    .season-btn:hover { background: #161a15; color: #c4d1b8; border-color: #829c73; }
+    .season-btn.active { background: var(--theme-glow); border-color: var(--theme-primary); color: var(--theme-primary); box-shadow: 0 0 10px var(--theme-glow); }
+
+    /* СТАТИСТИКА */
+    .scores-row { display: flex; justify-content: space-between; align-items: stretch; gap: 10px; }
+    .score-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 5px; border-radius: 8px; flex: 1; backdrop-filter: blur(8px); cursor: pointer; transition: 0.3s; }
+    .score-box:hover, .legend-col:hover { transform: translateY(-3px); filter: brightness(1.2); }
+    .score-label { width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; text-shadow: 1px 1px 2px #000; text-align: center; }
+    .main-score { font-size: 32px; font-weight: bold; line-height: 1; letter-spacing: 2px; text-align: center; font-family: inherit; }
+    .main-score span { font-size: 14px; text-shadow: none !important; letter-spacing: normal; color: #c4d1b8;}
+    .chart-wrapper { width: 100%; height: 240px; margin-bottom: 10px; }
+    .interactive-legend { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .legend-col { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; padding: 8px 5px; border-radius: 8px; flex: 1; backdrop-filter: blur(8px); }
+    .legend-title { display: flex; align-items: center; gap: 5px; font-size: 14px; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; text-shadow: 1px 1px 2px #000;}
+    .legend-score { font-size: 22px; font-weight: bold; margin-bottom: 5px; transition: color 0.3s;}
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .legend-breakdown { width: 100%; display: flex; flex-direction: column; gap: 4px; border-top: 1px dashed rgba(74, 92, 65, 0.6); padding-top: 8px; margin-top: 5px;}
+    .crit-row { display: flex; justify-content: space-between; font-size: 15px; color: #a4b09c; padding: 4px 8px; border-radius: 0 6px 6px 0; margin-bottom: 4px; transition: 0.2s;}
+    .crit-row span:last-child { font-weight: bold; font-family: inherit; }
+    .rate-btn { width: 100%; background: var(--theme-glow); border: 1px solid var(--theme-primary); color: var(--theme-primary); padding: 12px; border-radius: 8px; font-family: inherit; font-size: 20px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.5s; margin-top: auto; box-shadow: 0 0 10px var(--theme-glow); }
+    .rate-btn:hover { background: var(--theme-primary); color: #0b0d0a; box-shadow: 0 0 20px var(--theme-primary); }
+
+    /* КОММЕНТАРИИ */
+    .comment-input-area { background: var(--theme-panel-bg-top); border: 1px solid var(--theme-panel-border); border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+    .comment-textarea { width: 100%; background: #121612; border: 1px solid var(--theme-panel-border); color: #c4d1b8; border-radius: 8px; padding: 15px; font-family: inherit; font-size: 18px; outline: none; transition: 0.2s; resize: vertical; min-height: 100px; box-sizing: border-box; }
+    .comment-textarea:focus { border-color: var(--theme-primary); box-shadow: 0 0 15px var(--theme-glow); }
+    .send-btn { align-self: flex-end; background: #1a2618; border: 1px solid var(--theme-primary); color: var(--theme-primary); padding: 10px 30px; font-family: inherit; font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px;}
+    .send-btn:hover { background: var(--theme-primary); color: #0b0d0a; box-shadow: 0 0 15px var(--theme-glow); }
+    .comments-list { display: flex; flex-direction: column; gap: 25px; }
+    .comment-wrapper { display: flex; flex-direction: column; gap: 15px; }
+    .comment-item { display: flex; flex-direction: column; background: var(--theme-panel-bg-bottom); border-radius: 12px; border: 1px solid var(--theme-panel-border); overflow: hidden; }
+    .comment-top { display: flex; justify-content: space-between; align-items: center; background: transparent; padding: 15px 25px; border-bottom: 1px dashed var(--theme-panel-border); }
+    .comment-author-block { display: flex; align-items: center; gap: 15px; }
+    .comment-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--theme-primary); box-shadow: 0 0 10px var(--theme-glow); object-fit: cover; background: #0b0d0a; }
+    .author-details { display: flex; flex-direction: column; gap: 6px; }
+    .comment-author { font-family: inherit; font-weight: bold; font-size: 22px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); letter-spacing: 1px;}
+    .comment-rating-block { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; }
+    .cr-overall { font-size: 40px; font-weight: bold; line-height: 1; letter-spacing: -1px; }
+    .cr-theory { display: flex; gap: 8px; font-size: 16px; font-weight: bold; margin-top: 5px; }
+    .reply-item .comment-top { padding: 12px 20px; border-radius: 12px 12px 0 0; background: var(--theme-panel-bg-top); }
+    .reply-item .comment-avatar { width: 45px; height: 45px; border-width: 1px; }
+    .reply-item .comment-author { font-size: 20px; }
+    .reply-item .cr-overall { font-size: 32px; }
+    .reply-item .cr-theory { font-size: 14px; gap: 6px; }
+    .tooltip-element { position: relative; cursor: help; transition: transform 0.2s; padding: 2px; display: inline-block; }
+    .tooltip-element:hover { transform: scale(1.1); z-index: 50; }
+    .tooltip-element::after { content: attr(data-title); position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); background: #121612; color: #c4d1b8; padding: 6px 10px; border-radius: 6px; font-size: 13px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; border: 1px solid #4a5c41; font-weight: normal; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.8); z-index: 100;}
+    .tooltip-element:hover::after { opacity: 1; }
+    .cr-theory span:nth-last-child(1)::after, .cr-theory span:nth-last-child(2)::after, .cr-overall::after { left: auto; right: 0; transform: none; }
+    .comment-content-wrap { padding: 20px 25px; display: flex; flex-direction: column; gap: 15px; }
+    .comment-text { font-size: 18px; color: #c4d1b8; line-height: 1.6; word-break: break-word; white-space: pre-wrap; margin-bottom: 15px; }
+    .reply-item .comment-content-wrap { padding: 15px 20px; gap: 10px; }
+    .reply-item .comment-text { font-size: 16px; margin-bottom: 10px; }
+    .comment-bottom { display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(74, 92, 65, 0.4); padding-top: 15px; }
+    .reply-item .comment-bottom { padding-top: 10px; }
+    .comment-date { font-size: 13px; color: #6b7a62; font-family: sans-serif; font-style: italic; }
+    .edited-tag { font-size: 11px; opacity: 0.6; margin-left: 5px; font-style: italic; }
+    .comment-actions { display: flex; gap: 20px; align-items: center; }
+    .comment-actions button { background: transparent; border: none; cursor: pointer; font-family: inherit; font-size: 15px; text-transform: uppercase; transition: 0.2s; padding: 0; font-weight: bold; letter-spacing: 1px; }
+    .reply-item .comment-actions button { font-size: 14px; }
+    .btn-reply { color: #a4b09c; } .btn-reply:hover { color: var(--theme-primary); }
+    .btn-edit { color: var(--theme-primary); opacity: 0.8; } .btn-edit:hover { opacity: 1; text-shadow: 0 0 8px var(--theme-glow); }
+    .btn-del { color: #ff5555; } .btn-del:hover { text-shadow: 0 0 5px rgba(255,85,85,0.5); }
+    .toggle-replies-btn { background: transparent; border: none; color: #829c73; font-family: inherit; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-left: 10px; transition: 0.2s; width: fit-content; }
+    .toggle-replies-btn:hover { color: #a6e3a1; }
+    .replies-list { display: flex; flex-direction: column; gap: 15px; margin-left: 40px; border-left: 2px solid #283325; padding-left: 20px; display: none; }
+    .reply-input-wrapper { display: none; margin-left: 40px; margin-top: 5px; flex-direction: column; gap: 10px; }
+
+    /* МОДАЛКИ */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+    .modal-box { background: linear-gradient(180deg, var(--theme-panel-bg-top) 0%, var(--theme-panel-bg-bottom) 100%); border: 2px solid var(--theme-primary); border-radius: 12px; padding: 30px; width: 750px; box-shadow: 0 0 30px var(--theme-glow); position: relative; transition: 0.5s; }
+    .modal-title { color: var(--theme-primary); font-size: 24px; text-transform: uppercase; margin: 0 0 20px 0; text-align: center; font-weight: bold; letter-spacing: 1px; text-shadow: 0 0 10px var(--theme-glow); }
+    .close-btn { position: absolute; top: 15px; right: 20px; color: var(--theme-primary); font-size: 28px; cursor: pointer; transition: 0.2s; font-family: sans-serif; line-height: 1; opacity: 0.7; }
+    .close-btn:hover { color: #ff5555; transform: scale(1.1); opacity: 1; text-shadow: 0 0 10px rgba(255,85,85,0.8); }
+    .modal-content-wrapper { display: flex; gap: 30px; align-items: center; }
+    .modal-sliders { flex: 1; }
+    .modal-chart-area { width: 260px; height: 260px; display: flex; justify-content: center; align-items: center; }
+    .slider-group { margin-bottom: 15px; }
+    .slider-header { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 5px; color: #c4d1b8; font-weight: bold;}
+    .modal-box input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+    .modal-box input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: var(--theme-panel-header); border-radius: 3px; border: 1px solid var(--theme-panel-border); transition: 0.5s; }
+    .modal-box input[type=range]::-webkit-slider-thumb { height: 18px; width: 18px; border-radius: 50%; background: var(--theme-primary); cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 0 10px var(--theme-glow); transition: 0.5s; }
+    .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0d0a; z-index: 9999; display: flex; justify-content: center; align-items: center; color: #a6e3a1; font-size: 24px; flex-direction: column; text-align: center; padding: 20px; }
+    #toast { position: fixed; bottom: 30px; right: 30px; background: #a6e3a1; color: #121612; padding: 15px 25px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 5px 20px rgba(166, 227, 161, 0.4); transform: translateY(100px); opacity: 0; transition: 0.3s; z-index: 2000; font-family: sans-serif;}
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.error { background: #ff5555; color: white; box-shadow: 0 5px 20px rgba(255, 85, 85, 0.4); }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loading-screen">Загрузка данных...</div>
+    <div id="toast">✅ Оценка успешно сохранена!</div>
+
+    <nav class="top-nav">
+        <!-- ЛЕВАЯ ЧАСТЬ -->
+        <div style="display: flex; align-items: center; gap: 40px;">
+            <a href="index.html" class="nav-logo">Skinwalker Игры</a>
+            
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="games-tierlist.html" class="nav-btn btn-tier">Тир-лист</a>
+                <a href="index.html" class="nav-btn btn-hub">Хаб</a>
+                
+                <div class="visual-dropdown" id="visual-dropdown">
+                    <button class="nav-btn btn-visual" onclick="toggleVisualMenu()">Визуал</button>
+                    <div class="visual-dropdown-content">
+                        <div class="role-toggles" style="margin: 0; justify-content: center; flex-wrap: wrap;">
+                            <button id="toggle-streamer" class="role-toggle-btn active streamer" onclick="toggleRoleVis('streamer')">Стример</button>
+                            <button id="toggle-me" class="role-toggle-btn active me" onclick="toggleRoleVis('me')">Я</button>
+                            <button id="toggle-chat" class="role-toggle-btn active chat" onclick="toggleRoleVis('chat')">Чат</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ЧАСТЬ -->
+        <div class="nav-auth" id="nav-auth">
+            <button class="twitch-btn" onclick="loginTwitch()">Войти через Twitch</button>
+        </div>
+    </nav>
+
+    <div class="layout" style="display: none;" id="main-layout">
+        
+        <!-- ЛЕВАЯ КОЛОНКА С ИНФОЙ -->
+        <div class="col-left">
+            <div class="widget-base" style="height: 100%;">
+                <div class="widget-header"><div class="widget-title">Информация</div></div>
+                <div class="widget-content">
+                    <img id="cover-img" src="" class="cover-img">
+                    <div style="font-size: 24px; color: #c4d1b8; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 10px;" id="title-display">Название</div>
+                    
+                    <div class="genre-badges" id="genres-display" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 15px;"></div>
+                    
+                    <div style="background: var(--theme-panel-header); border: 1px solid var(--theme-panel-border); border-radius: 6px; padding: 4px; color: var(--theme-primary); text-shadow: 0 0 10px var(--theme-glow); font-size: 16px; text-transform: uppercase; font-weight: bold; text-align: center; margin: 5px 0 10px 0; letter-spacing: 2px;">Об игре</div>
+                    
+                    <div class="info-row"><span class="info-label">Год выхода:</span><span class="info-val" id="year-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Платформа:</span><span class="info-val" id="format-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Режим:</span><span class="info-val" id="mode-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Сюжет (HLTB):</span><span class="info-val" id="hltb-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Критики:</span><span class="info-val" id="critic-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Разраб:</span><span class="info-val" id="studio-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Движок:</span><span class="info-val" id="engine-display">---</span></div>
+                    
+                    <div style="background: var(--theme-panel-header); border: 1px solid var(--theme-panel-border); border-radius: 6px; padding: 4px; color: var(--theme-primary); text-shadow: 0 0 10px var(--theme-glow); font-size: 16px; text-transform: uppercase; font-weight: bold; text-align: center; margin: 15px 0 10px 0; letter-spacing: 2px;">Моё прохождение</div>
+                    
+                    <div class="info-row"><span class="info-label">Статус:</span><span class="info-val" id="status-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Часы:</span><span class="info-val" id="hours-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Ачивки:</span><span class="info-val" id="achievements-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Сложность:</span><span class="info-val" id="difficulty-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Смерти:</span><span class="info-val" id="deaths-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Выбор:</span><span class="info-val" id="source-display">---</span></div>
+                    <div class="info-row"><span class="info-label">Дата:</span><span class="info-val" id="date-display">---</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ЦЕНТРАЛЬНАЯ КОЛОНКА (ПЛЕЕР + КОММЕНТЫ) -->
+        <div class="col-center">
+            <div class="widget-base">
+                <div class="widget-header"><div class="widget-title">Медиатека</div></div>
+                <div class="widget-content">
+                    <div class="player-nav">
+                        <div class="episodes-container" id="episodes-container" style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;"></div>
+                    </div>
+                    <div id="player-wrapper" style="display: none; position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 6px; overflow: hidden; border: 1px solid var(--theme-panel-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget-base">
+                <div class="widget-header"><div class="widget-title">Описание</div></div>
+                <div class="widget-content">
+                    <div class="synopsis-text" id="synopsis-display">Загрузка...</div>
+                </div>
+            </div>
+
+            <div class="widget-base" style="flex: 1;">
+                <div class="widget-header"><div class="widget-title">Комментарии</div></div>
+                <div class="widget-content" style="padding: 25px;">
+                    <div class="comment-input-area" id="main-comment-area">
+                        <textarea id="comment-text" class="comment-textarea" placeholder="Напиши свою рецензию на эту игру..."></textarea>
+                        <button class="send-btn" id="send-comment-btn" onclick="postComment()">Отправить</button>
+                    </div>
+                    <div class="comments-list" id="comments-list">
+                        <div style="color: #6b7a62; text-align: center; padding: 20px;">Загрузка комментариев...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА (СТАТИСТИКА И ОЦЕНКА) -->
+        <div class="col-right">
+            <div class="widget-base">
+                <div class="widget-header"><div class="widget-title">Статистика</div></div>
+                <div class="widget-content">
+                    
+                    <div style="color: var(--theme-primary); text-shadow: 0 0 10px var(--theme-glow); font-size: 16px; text-transform: uppercase; margin-bottom: 5px; text-align: center; font-weight: bold; letter-spacing: 1px;">Итоговый Ранг</div>
+                    <div class="scores-row">
+                        <div class="score-box streamer-element" id="box-streamer" onmouseover="highlightChart(0)" onmouseout="resetChart()">
+                            <div class="score-label streamer" id="label-streamer">Стример</div>
+                            <div class="main-score" id="streamer-score-val">0<span> / 10</span></div>
+                        </div>
+                        <div class="score-box me-element" id="box-me" onmouseover="highlightChart(2)" onmouseout="resetChart()">
+                            <div class="score-label me" id="label-me">Моя</div>
+                            <div class="main-score" id="my-score-display">0<span> / 10</span></div>
+                        </div>
+                        <div class="score-box chat-element" id="box-chat" onmouseover="highlightChart(1)" onmouseout="resetChart()">
+                            <div class="score-label chat" id="label-chat">Чат</div>
+                            <div class="main-score" id="chat-score-val">0<span> / 10</span></div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px dashed #283325; margin: 5px 0;"></div>
+
+                    <div style="color: var(--theme-primary); text-shadow: 0 0 10px var(--theme-glow); font-size: 16px; text-transform: uppercase; margin-bottom: 5px; text-align: center; font-weight: bold; letter-spacing: 1px;">Анализ критериев</div>
+                    <div class="chart-wrapper"><canvas id="detailsChart"></canvas></div>
+                    
+                    <!-- ВОТ ЭТИ 3 КОЛОНКИ, КОТОРЫЕ ПРОПАДАЛИ -->
+                    <div class="interactive-legend">
+                        <div class="legend-col streamer-element" id="legend-box-streamer" onmouseover="highlightChart(0)" onmouseout="resetChart()">
+                            <div class="legend-title" id="legend-label-streamer"><div class="dot" id="dot-streamer"></div>Стример</div>
+                            <div class="legend-score" id="avg-streamer-score">0</div>
+                            <div class="legend-breakdown" id="breakdown-streamer"></div>
+                        </div>
+                        <div class="legend-col me-element" id="legend-box-me" onmouseover="highlightChart(2)" onmouseout="resetChart()">
+                            <div class="legend-title" id="legend-label-me"><div class="dot" id="dot-me"></div>Я</div>
+                            <div class="legend-score" id="avg-viewer-score">0</div>
+                            <div class="legend-breakdown" id="breakdown-viewer"></div>
+                        </div>
+                        <div class="legend-col chat-element" id="legend-box-chat" onmouseover="highlightChart(1)" onmouseout="resetChart()">
+                            <div class="legend-title" id="legend-label-chat"><div class="dot" id="dot-chat"></div>Чат</div>
+                            <div class="legend-score" id="avg-chat-score">0</div>
+                            <div class="legend-breakdown" id="breakdown-chat"></div>
+                        </div>
+                    </div>
+
+                    <button class="rate-btn" id="rate-title-btn" onclick="openRatingModal()">Оценить игру</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО -->
+    <div id="rating-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="close-btn" onclick="closeRatingModal()">×</div>
+            <h2 class="modal-title">Выставить оценку</h2>
+            <div class="modal-content-wrapper">
+                <div class="modal-sliders">
+                    <div class="slider-group" style="margin-bottom: 25px;">
+                        <div class="slider-header" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--theme-primary); font-size: 18px; text-transform: uppercase;">Итоговая оценка</span>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span id="m-overall-tier" style="font-size: 32px; font-weight: bold; font-family: 'Neucha', cursive; text-shadow: none; color: #6b7a62;">—</span>
+                                <span id="m-overall" style="color: #fff; font-size: 26px; font-weight: bold;">0.0</span>
+                            </div>
+                        </div>
+                        <input type="range" id="modal-overall" min="0" max="10" step="0.1" value="0" oninput="updateOverallSlider(this.value)">
+                    </div>
+
+                    <label style="margin-top: 15px; border-top: 1px dashed #283325; padding-top: 15px;">Оценка по критериям:</label>
+                    <div class="slider-group"><div class="slider-header"><span>Визуал</span><span id="m-vis">5.0</span></div><input type="range" id="msl-vis" min="1" max="10" step="0.5" value="5" oninput="document.getElementById('m-vis').innerText=parseFloat(this.value).toFixed(1); syncModalChart();"></div>
+                    <div class="slider-group"><div class="slider-header"><span>Геймплей</span><span id="m-game">5.0</span></div><input type="range" id="msl-game" min="1" max="10" step="0.5" value="5" oninput="document.getElementById('m-game').innerText=parseFloat(this.value).toFixed(1); syncModalChart();"></div>
+                    <div class="slider-group"><div class="slider-header"><span>Звук и Музыка</span><span id="m-snd">5.0</span></div><input type="range" id="msl-snd" min="1" max="10" step="0.5" value="5" oninput="document.getElementById('m-snd').innerText=parseFloat(this.value).toFixed(1); syncModalChart();"></div>
+                    <div class="slider-group"><div class="slider-header"><span>Тех. состояние</span><span id="m-tech">5.0</span></div><input type="range" id="msl-tech" min="1" max="10" step="0.5" value="5" oninput="document.getElementById('m-tech').innerText=parseFloat(this.value).toFixed(1); syncModalChart();"></div>
+                    <div class="slider-group"><div class="slider-header"><span>Атмосфера</span><span id="m-atm">5.0</span></div><input type="range" id="msl-atm" min="1" max="10" step="0.5" value="5" oninput="document.getElementById('m-atm').innerText=parseFloat(this.value).toFixed(1); syncModalChart();"></div>
+                </div>
+                <div class="modal-chart-area"><canvas id="modalChart"></canvas></div>
+            </div>
+            <button class="rate-btn" id="save-rate-btn" onclick="saveUserRating()">Сохранить</button>
+        </div>
+    </div>
+
+    <!-- СКРИПТЫ -->
+    <script>
+        const TWITCH_CLIENT_ID = 'gko3y2nhxg0ocvte0ru970pbau3eiq';
+        const REDIRECT_URI = 'https://skinnystreams04-ai.github.io/Anime/';
+        const ADMIN_USERNAME = 'skinwalker_nozxc'; 
+        const FIREBASE_BASE = 'https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app';
+
+        let currentUser = null, currentFranchiseId = null, gameData = {}, currentCommunityRatings = {}, currentComments = {};
+        let radarChart = null, modalRadarChart = null, editingTarget = { type: null, id: null, parentId: null }; 
+        let currentDisplayMode = localStorage.getItem('skinwalker_display_mode') || 'score';
+        let visRoles = JSON.parse(localStorage.getItem('skinwalker_vis_roles')) || { streamer: true, me: true, chat: true };
+
+        function toggleVisualMenu() { document.getElementById('visual-dropdown').classList.toggle('show'); }
+        window.addEventListener('click', function(e) { if (!document.getElementById('visual-dropdown').contains(e.target)) document.getElementById('visual-dropdown').classList.remove('show'); });
+
+        function toggleRoleVis(role) {
+            visRoles[role] = !visRoles[role];
+            localStorage.setItem('skinwalker_vis_roles', JSON.stringify(visRoles));
+            document.getElementById(`toggle-${role}`).classList.toggle('active', visRoles[role]);
+            applyPageVisuals(); 
+        }
+        
+        function applyPageVisuals() {
+            if (!window.pageScores) return; 
+            const isStreamer = currentUser && currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+            const showMe = !isStreamer && visRoles.me;
+
+            const renderBox = (boxId, labelId, valId, score, labelName, forceTierDisplay = false, forceTierValue = null) => {
+                const box = document.getElementById(boxId), label = document.getElementById(labelId), val = document.getElementById(valId);
+                if (currentDisplayMode === 'tier' || forceTierDisplay) {
+                    let tier;
+                    if (forceTierDisplay && forceTierValue) {
+                        tier = getTierData(0); tier.letter = forceTierValue; tier.color = getTierDataByLetter(forceTierValue).color; tier.glow = getTierDataByLetter(forceTierValue).glow;
+                    } else { tier = getTierData(score); }
+                    box.style.cssText = `background: ${tier.color}15; border: 1px solid ${tier.color}60; box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 15px ${tier.color}15; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 5px; border-radius: 8px; flex: 1; cursor: pointer; transition: 0.3s;`;
+                    label.style.cssText = `color: ${tier.color}; border-bottom: 1px solid ${tier.color}60; text-shadow: 0 0 8px ${tier.color}; width: 100%; padding-bottom: 4px; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; text-align: center;`;
+                    label.innerText = labelName;
+                    val.innerHTML = forceTierDisplay ? tier.letter : tier.letter + (score > 0 ? `<div style="font-size: 12px; color: ${tier.color}; opacity: 0.8; margin-top: -2px; font-family: sans-serif; font-weight: bold; letter-spacing: 1px;">${score}</div>` : '');
+                    val.style.cssText = `color: ${tier.color}; font-size: 44px; font-weight: bold; line-height: 1; text-shadow: ${tier.glow}; font-family: 'Neucha', cursive; text-align: center;`;
+                } else {
+                    box.style.cssText = getGlassBoxStyle(score) + ' display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 5px; border-radius: 8px; flex: 1; cursor: pointer; transition: 0.3s;';
+                    label.style.cssText = `color:${getScoreColor(score, 1)}; border-bottom: 1px solid ${getScoreColor(score, 0.4)}; text-shadow:0 0 8px ${getScoreColor(score, 0.6)}; width: 100%; padding-bottom: 4px; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; text-align: center;`;
+                    label.innerText = labelName;
+                    val.innerHTML = score > 0 ? `${score}<span> / 10</span>` : `—`;
+                    val.style.cssText = `color:#fff; text-shadow:${getScoreShadow(score, true)}; font-size: 32px; font-weight: bold; line-height: 1; letter-spacing: 2px; text-align: center; font-family: 'Neucha', cursive, sans-serif;`;
+                }
+            };
+
+            // СНАЧАЛА рендерим стили и цвета
+            const streamerTier = window.pageScores.streamerTier;
+            renderBox('box-streamer', 'label-streamer', 'streamer-score-val', window.pageScores.streamerAvg, 'Стример', streamerTier && streamerTier !== 'UNRANKED', streamerTier);
+            renderBox('box-chat', 'label-chat', 'chat-score-val', window.pageScores.chat, 'Чат');
+            renderBox('box-me', 'label-me', 'my-score-display', window.pageScores.me, 'Моя');
+
+            // А ТЕПЕРЬ скрываем блоки, если они выключены в меню (синхронно для верха и низа)
+            document.getElementById('box-streamer').style.display = visRoles.streamer ? 'flex' : 'none';
+            document.getElementById('legend-box-streamer').style.display = visRoles.streamer ? 'flex' : 'none';
+            document.getElementById('box-chat').style.display = visRoles.chat ? 'flex' : 'none';
+            document.getElementById('legend-box-chat').style.display = visRoles.chat ? 'flex' : 'none';
+            document.getElementById('box-me').style.display = showMe ? 'flex' : 'none';
+            document.getElementById('legend-box-me').style.display = showMe ? 'flex' : 'none';
+
+            if (radarChart && radarChart.data.datasets.length >= 3) {
+                radarChart.data.datasets[0].hidden = !visRoles.streamer;
+                radarChart.data.datasets[1].hidden = !visRoles.chat;
+                radarChart.data.datasets[2].hidden = !showMe;
+                radarChart.update();
+            }
+        }
+
+        setTimeout(() => {
+            currentDisplayMode = 'score'; // Жестко включаем режим цифр для Чата/Меня
+            Object.keys(visRoles).forEach(r => document.getElementById(`toggle-${r}`).classList.toggle('active', visRoles[r]));
+            applyPageVisuals();
+        }, 500);
+
+        window.globalUsersDB = {};
+        const radarColors = [ { bg: 'rgba(203, 166, 247, 0.2)', border: '#cba6f7' }, { bg: 'rgba(184, 168, 123, 0.2)', border: '#b8a87b' }, { bg: 'rgba(166, 227, 161, 0.2)', border: '#a6e3a1' } ];
+        if (typeof Chart !== 'undefined') { Chart.defaults.font.family = "'Neucha', cursive, sans-serif"; Chart.defaults.color = "#829c73"; }
+
+        function getScoreColor(score, alpha = 1) {
+            const numScore = Number(score);
+            if (numScore === 0 || isNaN(numScore)) return `rgba(164, 176, 156, ${alpha})`; 
+            let r, g, b;
+            if (numScore <= 5.5) { let p = Math.max(0, (numScore - 1) / 4.5); r = Math.round(205 + p * 5); g = Math.round(115 + p * 100); b = Math.round(50 + p * 170); } 
+            else { let p = Math.min(1, (numScore - 5.5) / 4.5); r = Math.round(210 + p * 45); g = Math.round(215 + p * 20); b = Math.round(220 + p * -200); }
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function getScoreShadow(score, isLarge) {
+            const numScore = Number(score);
+            const base = isLarge ? '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 2px 2px 4px #000' : '1px 1px 2px #000';
+            if (numScore === 0 || isNaN(numScore)) return base;
+            const color = getScoreColor(score, 1);
+            let glow = `${base}, 0 0 ${Math.round(1 + (numScore / 10) * 5)}px ${color}`;
+            if (numScore >= 8) glow += `, 0 0 ${Math.round((1 + (numScore / 10) * 5) * 1.5)}px ${color}`;
+            if (numScore === 10) glow += `, 0 0 15px rgba(255,255,255,0.3)`;
+            return glow;
+        }
+
+        function getGlassBoxStyle(score) {
+            const numScore = Number(score);
+            if (numScore === 0 || isNaN(numScore)) return `background: rgba(164,176,156,0.05); border: 1px solid rgba(164,176,156,0.25); box-shadow: 0 4px 10px rgba(0,0,0,0.3);`;
+            const bg = getScoreColor(score, 0.1), border = getScoreColor(score, 0.5), glow = getScoreColor(score, 0.15), blur = Math.round(4 + (numScore / 10) * 8);
+            return `background: ${bg}; border: 1px solid ${border}; box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 ${blur}px ${glow} inset, 0 0 ${blur}px ${glow};`;
+        }
+
+        function getGlassRowStyle(score) {
+            const numScore = Number(score);
+            if (numScore === 0 || isNaN(numScore)) return `background: rgba(255,255,255,0.02); border-left: 2px solid rgba(164,176,156,0.5);`;
+            return `background: linear-gradient(90deg, ${getScoreColor(score, 0.1)} 0%, transparent 100%); border-left: 2px solid ${getScoreColor(score, 0.8)};`;
+        }
+
+        const safeNum = (v) => Number(v) || 0;
+        const calcTheoryAvg = (t) => {
+            if (!t) return 0;
+            const sum = safeNum(t.visuals) + safeNum(t.gameplay) + safeNum(t.sound) + safeNum(t.tech) + safeNum(t.atmosphere);
+            return sum > 0 ? parseFloat((sum / 5).toFixed(1)) : 0;
+        };
+
+        window.addEventListener('pageshow', (event) => { if (event.persisted) loadGameData(); });
+
+        function getTierDataByLetter(letter) {
+            const dict = { 'S': { color: '#ff4a4a', glow: '0 0 15px rgba(255, 74, 74, 0.8)' }, 'A': { color: '#ffd700', glow: '0 0 15px rgba(255, 215, 0, 0.8)' }, 'B': { color: '#cba6f7', glow: '0 0 15px rgba(203, 166, 247, 0.8)' }, 'C': { color: '#89b4fa', glow: '0 0 15px rgba(137, 180, 250, 0.8)' }, 'D': { color: '#a6e3a1', glow: '0 0 15px rgba(166, 227, 161, 0.8)' } };
+            return dict[letter] || { color: '#888888', glow: '0 0 15px rgba(136, 136, 136, 0.8)' };
+        }
+
+        function getTierData(score) {
+            const num = Number(score) || 0;
+            if (num === 0) return { letter: '—', color: '#6b7a62', glow: 'none', label: 'Без оценки' };
+            if (num >= 9.0) return { letter: 'S', color: '#ff4a4a', glow: '0 0 15px rgba(255, 74, 74, 0.8)' };
+            if (num >= 8.0) return { letter: 'A', color: '#ffd700', glow: '0 0 15px rgba(255, 215, 0, 0.8)' };
+            if (num >= 7.0) return { letter: 'B', color: '#cba6f7', glow: '0 0 15px rgba(203, 166, 247, 0.8)' };
+            if (num >= 5.0) return { letter: 'C', color: '#89b4fa', glow: '0 0 15px rgba(137, 180, 250, 0.8)' };
+            if (num >= 3.0) return { letter: 'D', color: '#a6e3a1', glow: '0 0 15px rgba(166, 227, 161, 0.8)' };
+            return { letter: 'F', color: '#888888', glow: '0 0 15px rgba(136, 136, 136, 0.8)' };
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.toggle('error', isError);
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function loginTwitch() { window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=user:read:follows`; }
+        function logoutTwitch() { try { localStorage.removeItem('twitch_token'); } catch(e){} location.reload(); }
+
+        function getUserInfo(username, fallbackTwitchColor) {
+            if (!username) return { role: "F", gold: 0, tickets: 0, color: '#a4b09c', badge: `<span class="role-badge role-f">VIEWER</span>` };
+            const dbUser = window.globalUsersDB[username.toLowerCase()]; 
+            let r = "F", g = 0, t = 0, c = fallbackTwitchColor || '#a4b09c';
+            if (dbUser) { if (dbUser.role) r = dbUser.role.toUpperCase(); if (dbUser.wallet_gold) g = dbUser.wallet_gold; if (dbUser.wallet_tickets) t = dbUser.wallet_tickets; if (dbUser.color && dbUser.color.trim() !== "") c = dbUser.color; }
+            let badgeHtml = r === 'SUB' || r === 'SUBSCRIBER' ? `<span class="role-badge role-sub">SUB</span>` : r === 'VIP' ? `<span class="role-badge role-vip">VIP</span>` : `<span class="role-badge role-f">FOLLOW</span>`;
+            return { role: r, gold: g, tickets: t, color: c, badge: badgeHtml };
+        }
+
+        async function checkTwitchAuth() {
+            try {
+                const hash = window.location.hash; let token = null;
+                try { token = localStorage.getItem('twitch_token'); } catch(e){}
+                if (hash && hash.includes('access_token')) { token = new URLSearchParams(hash.substring(1)).get('access_token'); try { localStorage.setItem('twitch_token', token); } catch(e){} window.history.replaceState(null, null, window.location.pathname + window.location.search); }
+
+                if (token) {
+                    const res = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } });
+                    if (res.status === 401) { try { localStorage.removeItem('twitch_token'); } catch(e){} return; }
+                    currentUser = (await res.json()).data[0];
+                    try { const colorRes = await fetch(`https://api.twitch.tv/helix/chat/color?user_id=${currentUser.id}`, { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } }); const colorData = await colorRes.json(); currentUser.color = (colorData.data && colorData.data[0] && colorData.data[0].color) ? colorData.data[0].color : null; } catch(e) {}
+                    
+                    const uInfo = getUserInfo(currentUser.login, currentUser.color);
+                    let isFollower = false;
+                    try {
+                        const bRes = await fetch(`https://api.twitch.tv/helix/users?login=${ADMIN_USERNAME}`, { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } });
+                        const broadcasterId = (await bRes.json()).data[0].id;
+                        if (currentUser.id === broadcasterId) isFollower = true; 
+                        else { const fRes = await fetch(`https://api.twitch.tv/helix/channels/followed?user_id=${currentUser.id}&broadcaster_id=${broadcasterId}`, { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } }); if (fRes.status === 401 || fRes.status === 403) { logoutTwitch(); return; } const fData = await fRes.json(); if (fData.data && fData.data.length > 0) isFollower = true; }
+                    } catch(e) {}
+                    window.isUserFollower = isFollower;
+
+                    if (!isFollower) {
+                        setTimeout(() => {
+                            const rateBtn = document.querySelector('button[onclick*="openRatingModal"]'); if (rateBtn) { rateBtn.innerText = "ФОЛЛОВЕРЫ (ОБНОВИ СТРАНИЦУ)"; rateBtn.style.opacity = "0.5"; rateBtn.style.pointerEvents = "none"; }
+                            const commInput = document.getElementById('comment-text'); const commSubmit = document.querySelector('button[onclick*="postComment"]'); if (commInput) { commInput.placeholder = "Подпишись на канал и обнови страницу (F5), чтобы писать..."; commInput.disabled = true; } if (commSubmit) commSubmit.style.display = "none";
+                        }, 800);
+                    }
+                    
+                    document.getElementById('nav-auth').innerHTML = `<div class="user-profile-neon"><div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль"><img src="${currentUser.profile_image_url}" class="user-avatar"></div><div class="profile-info"><div class="profile-top"><span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.filter='brightness(1.3)'" onmouseout="this.style.filter='none'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">${currentUser.display_name}</span><button class="logout-neon" onclick="logoutTwitch()">Выйти</button></div><div class="profile-bottom">${uInfo.badge}<div class="wallet-item" style="color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);"><img src="icons/BILET_GOLD.png"> <span>${uInfo.gold}</span></div><div class="wallet-item" style="color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.3);"><img src="icons/BILET.png"> <span>${uInfo.tickets}</span></div></div></div></div>`;
+                    if (currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase()) document.body.classList.add('is-admin');
+                }
+            } catch (e) {}
+        }
+
+        function initCharts() {
+            if (typeof Chart === 'undefined') return;
+            const ctx = document.getElementById('detailsChart').getContext('2d');
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: { labels: ['Визуал', 'Геймплей', 'Звук', 'Техника', 'Атмосфера'], datasets: [ { label: 'Стример', data: [0,0,0,0,0], backgroundColor: radarColors[0].bg, borderColor: radarColors[0].border, pointBackgroundColor: radarColors[0].border, pointBorderColor: '#0b0d0a', borderWidth: 2, pointRadius: 3 }, { label: 'Чат', data: [0,0,0,0,0], backgroundColor: radarColors[1].bg, borderColor: radarColors[1].border, pointBackgroundColor: radarColors[1].border, pointBorderColor: '#0b0d0a', borderWidth: 2, pointRadius: 3 }, { label: 'Я', data: [0,0,0,0,0], backgroundColor: radarColors[2].bg, borderColor: radarColors[2].border, pointBackgroundColor: radarColors[2].border, pointBorderColor: '#0b0d0a', borderWidth: 2, pointRadius: 3 } ] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { filter: function(item) { return item.raw > 0; } } }, scales: { r: { min: 0, max: 10, ticks: { display: false, stepSize: 2 }, grid: { color: '#283325' }, angleLines: { color: '#283325' }, pointLabels: { font: { size: 13, weight: 'bold' }, color: '#c4d1b8' } } } }
+            });
+        }
+
+        function syncModalChart() {
+            if (typeof Chart === 'undefined') return;
+            const isStreamer = currentUser && currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+            const color = isStreamer ? radarColors[0].border : radarColors[2].border, bg = isStreamer ? radarColors[0].bg : radarColors[2].bg;
+            if (!modalRadarChart) {
+                const ctxModal = document.getElementById('modalChart').getContext('2d');
+                modalRadarChart = new Chart(ctxModal, { type: 'radar', data: { labels: ['Визуал', 'Геймплей', 'Звук', 'Техника', 'Атмосфера'], datasets: [{ label: 'Оценка', data: [5,5,5,5,5], backgroundColor: bg, borderColor: color, pointBackgroundColor: color, pointBorderColor: '#0b0d0a', borderWidth: 2, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 10, ticks: { display: false, stepSize: 2 }, grid: { color: '#283325' }, angleLines: { color: '#283325' }, pointLabels: { font: { size: 10, weight: 'bold' }, color: '#c4d1b8' } } } } });
+            }
+            modalRadarChart.data.datasets[0].data = [ document.getElementById('msl-vis').value, document.getElementById('msl-game').value, document.getElementById('msl-snd').value, document.getElementById('msl-tech').value, document.getElementById('msl-atm').value ];
+            modalRadarChart.update();
+        }
+
+        function updateOverallSlider(val) {
+            document.getElementById('m-overall').innerText = parseFloat(val).toFixed(1);
+            const tier = getTierData(val); const tierEl = document.getElementById('m-overall-tier');
+            tierEl.innerText = tier.letter; tierEl.style.color = tier.color; tierEl.style.textShadow = tier.glow;
+        }
+
+        function openRatingModal() {
+            let existingData = null;
+            if (currentUser) { const isStreamer = currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase(); if (isStreamer) { const strScores = gameData?.scores; if (strScores) existingData = { overall: 0, theory: strScores.theory }; } else { existingData = currentCommunityRatings[currentUser.id]; } }
+            if (existingData) {
+                const ovrVal = existingData.overall || 0; document.getElementById('modal-overall').value = ovrVal; updateOverallSlider(ovrVal);
+                if (existingData.theory) { ['vis','game','snd','tech','atm'].forEach(id => { const val = existingData.theory[id==='vis'?'visuals':id==='game'?'gameplay':id==='snd'?'sound':id==='tech'?'tech':'atmosphere'] || 5; document.getElementById('msl-'+id).value = val; document.getElementById('m-'+id).innerText = parseFloat(val).toFixed(1); }); }
+            } else {
+                document.getElementById('modal-overall').value = 0; updateOverallSlider(0); ['vis','game','snd','tech','atm'].forEach(id => { document.getElementById('msl-'+id).value = 5; document.getElementById('m-'+id).innerText = '5.0'; });
+            }
+            syncModalChart(); document.getElementById('rating-modal').style.display = 'flex';
+        }
+
+        function closeRatingModal() { document.getElementById('rating-modal').style.display = 'none'; }
+
+        async function saveUserRating() {
+            if (!currentUser) return;
+            const btn = document.getElementById('save-rate-btn'); btn.innerText = "СОХРАНЕНИЕ..."; btn.style.pointerEvents = "none";
+            const overall = parseFloat(document.getElementById('modal-overall').value) || 0;
+            const theory = { visuals: parseFloat(document.getElementById('msl-vis').value), gameplay: parseFloat(document.getElementById('msl-game').value), sound: parseFloat(document.getElementById('msl-snd').value), tech: parseFloat(document.getElementById('msl-tech').value), atmosphere: parseFloat(document.getElementById('msl-atm').value) };
+            const isStreamer = currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+            try {
+                let res;
+                if (isStreamer) res = await fetch(`${FIREBASE_BASE}/games_db/${encodeURIComponent(currentFranchiseId)}/scores/theory.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(theory) });
+                else res = await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/ratings/${currentUser.id}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: currentUser.display_name, profileImage: currentUser.profile_image_url, overall, theory, timestamp: Date.now() }) });
+                if (!res.ok) throw new Error("Server error");
+                closeRatingModal(); showToast("✅ Оценка успешно сохранена!"); await loadGameData(); 
+            } catch (e) { showToast("❌ Ошибка сохранения!", true); }
+            btn.innerText = "СОХРАНИТЬ"; btn.style.pointerEvents = "auto";
+        }
+
+        function highlightChart(index) {
+            if (!radarChart) return;
+            radarChart.data.datasets.forEach((ds, i) => { if (i !== index) { ds.backgroundColor = 'transparent'; ds.borderColor = 'rgba(255,255,255,0.05)'; ds.borderWidth = 1; } else { ds.backgroundColor = radarColors[i].border + '40'; ds.borderColor = radarColors[i].border; ds.borderWidth = 4; } });
+            radarChart.update();
+        }
+
+        function resetChart() {
+            if (!radarChart) return;
+            radarChart.data.datasets.forEach((ds, i) => { ds.backgroundColor = radarColors[i].bg; ds.borderColor = radarColors[i].border; ds.borderWidth = 2; });
+            radarChart.update();
+        }
+
+        function generateBreakdownHtml(theoryObj) {
+            if (!theoryObj) theoryObj = {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0};
+            const createRow = (name, val) => `<div class="crit-row" style="${getGlassRowStyle(val)}"><span style="color:${getScoreColor(val, 1)}; text-shadow: ${getScoreShadow(val, false)};">${name}</span><span style="color:#fff; text-shadow: ${getScoreShadow(val, false)};">${val > 0 ? val : '-'}</span></div>`;
+            return createRow('Визуал', theoryObj.visuals) + createRow('Геймплей', theoryObj.gameplay) + createRow('Звук', theoryObj.sound) + createRow('Техника', theoryObj.tech) + createRow('Атмосфера', theoryObj.atmosphere);
+        }
+
+        function applyDynamicTheme(imageUrl) {
+            return new Promise((resolve) => {
+                if (!imageUrl || imageUrl.trim() === '') { resolve(); return; }
+                const colorThief = new ColorThief();
+                const processColor = (imgEl) => {
+                    try {
+                        const color = colorThief.getColor(imgEl);
+                        let r = color[0], g = color[1], b = color[2];
+                        if ((0.299 * r + 0.587 * g + 0.114 * b) < 90) { r = Math.min(255, r + 80); g = Math.min(255, g + 80); b = Math.min(255, b + 80); }
+                        document.documentElement.style.setProperty('--theme-primary', `rgb(${r}, ${g}, ${b})`); document.documentElement.style.setProperty('--theme-glow', `rgba(${r}, ${g}, ${b}, 0.5)`); document.documentElement.style.setProperty('--theme-panel-bg-top', `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.08)`); document.documentElement.style.setProperty('--theme-panel-bg-bottom', `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.02)`); document.documentElement.style.setProperty('--theme-panel-header', `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.15)`); document.documentElement.style.setProperty('--theme-panel-border', `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.4)`);
+                    } catch (e) { console.warn("Скрипт не смог прочитать цвет:", e); }
+                    resolve(); 
+                };
+
+                const hiddenImg = new Image(); hiddenImg.crossOrigin = 'Anonymous';
+                const safeTimeout = setTimeout(() => { resolve(); }, 5000);
+                hiddenImg.onload = function() { clearTimeout(safeTimeout); processColor(hiddenImg); };
+                hiddenImg.onerror = function() {
+                    const proxyImg = new Image(); proxyImg.crossOrigin = 'Anonymous';
+                    proxyImg.onload = function() { clearTimeout(safeTimeout); processColor(proxyImg); };
+                    proxyImg.onerror = function() {
+                        const proxyImg2 = new Image(); proxyImg2.crossOrigin = 'Anonymous';
+                        proxyImg2.onload = function() { clearTimeout(safeTimeout); processColor(proxyImg2); };
+                        proxyImg2.onerror = () => { clearTimeout(safeTimeout); resolve(); };
+                        proxyImg2.src = 'https://wsrv.nl/?url=' + encodeURIComponent(imageUrl);
+                    };
+                    proxyImg.src = 'https://corsproxy.io/?' + encodeURIComponent(imageUrl);
+                };
+                hiddenImg.src = imageUrl; 
+            });
+        }
+
+        async function loadGameData() {
+            try {
+                const loadingScreen = document.getElementById('loading-screen');
+                try { const dbRes = await fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' }); if (dbRes.ok) { window.globalUsersDB = (await dbRes.json()) || {}; } } catch(e) {}
+                loadingScreen.innerText = "Авторизация Twitch..."; await checkTwitchAuth();
+                loadingScreen.innerText = "Инициализация графиков..."; initCharts();
+                const urlParams = new URLSearchParams(window.location.search); currentFranchiseId = urlParams.get('id');
+                if(!currentFranchiseId) throw new Error("Игра не выбрана в ссылке!");
+
+                loadingScreen.innerText = "Загрузка базы данных...";
+                const res = await fetch(`${FIREBASE_BASE}/games_db/${encodeURIComponent(currentFranchiseId)}.json`, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`Ошибка сервера: HTTP ${res.status}`);
+                gameData = await res.json();
+                if (!gameData) throw new Error("Игра не найдена в базе данных!");
+                console.log("ДАННЫЕ ИЗ БАЗЫ:", gameData);
+
+                loadingScreen.innerText = "Рендеринг игры...";
+                const epContainer = document.getElementById('episodes-container'); if (epContainer) epContainer.innerHTML = '';
+                
+                // ИСПРАВЛЕНИЕ КРАША: Жесткий фильтр пустых ссылок
+                const rawUrls = gameData.videoUrls || (gameData.videoUrl ? [gameData.videoUrl] : []);
+                const urls = rawUrls.filter(u => { const urlStr = typeof u === 'object' ? u.url : u; return urlStr && urlStr.trim() !== ''; });
+                const playerWrapper = document.getElementById('player-wrapper');
+
+                if (urls.length > 0) {
+                    playerWrapper.style.display = 'block';
+                    playerWrapper.innerHTML = `<iframe id="main-player" src="about:blank" style="width: 100%; height: 100%; border: none;" allowfullscreen allow="autoplay"></iframe>`;
+                    if (urls.length > 1 && epContainer) {
+                        urls.forEach((urlItem, index) => {
+                            const isObj = typeof urlItem === 'object', linkUrl = isObj ? urlItem.url : urlItem, linkLabel = isObj ? urlItem.label : `Часть ${index + 1}`;
+                            const btn = document.createElement('button'); btn.className = `season-btn ${index === 0 ? 'active' : ''}`; btn.innerText = linkLabel; btn.style.fontSize = '14px'; btn.style.padding = '4px 12px';
+                            btn.onclick = () => { document.querySelectorAll('#episodes-container .season-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.getElementById('main-player').src = linkUrl; };
+                            epContainer.appendChild(btn);
+                        });
+                    }
+                    const firstUrl = typeof urls[0] === 'object' ? urls[0].url : urls[0]; document.getElementById('main-player').src = firstUrl;
+                } else {
+                    playerWrapper.style.display = 'flex'; playerWrapper.style.alignItems = 'center'; playerWrapper.style.justifyContent = 'center'; playerWrapper.style.background = '#050605'; 
+                    playerWrapper.innerHTML = `<span style="color: rgba(166, 227, 161, 0.3); font-size: 22px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Запись отсутствует</span>`; 
+                }
+
+                await applyDynamicTheme(gameData.coverUrl);
+                document.getElementById('cover-img').src = gameData.coverUrl || ''; 
+                document.getElementById('title-display').innerText = gameData.title || currentFranchiseId.replace(/_/g, ' ');
+                
+                // БЕЗОПАСНЫЙ ВЫВОД ИНФЫ С ПРОВЕРКОЙ НА ПУСТОТУ
+                const info = gameData.info || {};
+                const scoresInfo = gameData.scores || {};
+                
+                // Умный фильтр: если пусто или одни пробелы — ставим прочерк
+                const getVal = (val) => (val && String(val).trim() !== "") ? val : "---";
+                
+                // --- ОБ ИГРЕ ---
+                document.getElementById('year-display').innerText = getVal(info.year);
+                document.getElementById('format-display').innerText = getVal(info.format || info.platform);
+                document.getElementById('mode-display').innerText = getVal(info.mode);
+                document.getElementById('hltb-display').innerText = getVal(info.hltb || info.playtime);
+                document.getElementById('critic-display').innerText = getVal(info.rating || info.criticScore || info.critic || info.metacritic || info.score || info.critics || scoresInfo.metacritic || scoresInfo.critic);
+                document.getElementById('studio-display').innerText = getVal(info.studio || info.developer);
+                document.getElementById('engine-display').innerText = getVal(info.engine);
+                
+                // --- МОЁ ПРОХОЖДЕНИЕ ---
+                document.getElementById('status-display').innerText = getVal(info.status);
+                document.getElementById('hours-display').innerText = getVal(info.episodesTotal || info.hours);
+                document.getElementById('achievements-display').innerText = getVal(info.achievements);
+                document.getElementById('difficulty-display').innerText = getVal(info.difficulty);
+                document.getElementById('deaths-display').innerText = getVal(info.episodesWatched || info.deaths);
+                document.getElementById('source-display').innerText = getVal(info.source || info.pickedBy);
+                
+                if(info.dateWatched && String(info.dateWatched).trim() !== "") {
+                    const [y, m, d] = info.dateWatched.split('-'); document.getElementById('date-display').innerText = `${d}.${m}.${y}`;
+                } else { 
+                    document.getElementById('date-display').innerText = "---"; 
+                }
+                
+                document.getElementById('synopsis-display').innerText = getVal(info.description) !== "---" ? info.description : "Описание отсутствует.";
+                
+                const genreDict = { 'action': 'Экшен', 'adventure': 'Приключения', 'indie': 'Инди', 'rpg': 'РПГ', 'simulation': 'Симулятор', 'strategy': 'Стратегия', 'platformer': 'Платформер', 'shooter': 'Шутер', 'puzzle': 'Головоломка', 'horror': 'Хоррор', 'survival': 'Выживание', 'open world': 'Открытый мир', 'fighting': 'Файтинг', 'racing': 'Гонки', 'sports': 'Спорт', 'casual': 'Казуальная', 'multiplayer': 'Мультиплеер', 'co-op': 'Кооп', 'stealth': 'Стелс', 'metroidvania': 'Метроидвания', 'rogue-like': 'Рогалик', 'rogue-lite': 'Рогалик', 'hack and slash': 'Слэшер', 'visual novel': 'Новелла', 'sandbox': 'Песочница' };
+                if(info.genres) { document.getElementById('genres-display').innerHTML = info.genres.map(g => { const cleanG = g.trim().toLowerCase(); const translated = genreDict[cleanG] || g; return `<span class="genre-badge">${translated}</span>`; }).join(''); } else { document.getElementById('genres-display').innerHTML = ''; }
+
+                const commRes = await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/ratings.json`, { cache: 'no-store' });
+                if (!commRes.ok) throw new Error(`Ошибка загрузки оценок: HTTP ${commRes.status}`);
+                currentCommunityRatings = (await commRes.json()) || {};
+
+                let chatTotalOvr = 0, chatVis = 0, chatGame = 0, chatSnd = 0, chatTech = 0, chatAtm = 0, chatCount = 0, meData = null;
+                for (const [userId, r] of Object.entries(currentCommunityRatings)) {
+                    chatTotalOvr += safeNum(r.overall);
+                    if (r.theory) { chatVis += safeNum(r.theory.visuals); chatGame += safeNum(r.theory.gameplay); chatSnd += safeNum(r.theory.sound); chatTech += safeNum(r.theory.tech); chatAtm += safeNum(r.theory.atmosphere); }
+                    chatCount++; if (currentUser && userId === currentUser.id) { meData = r; }
+                }
+
+                const chatOvr = chatCount > 0 ? parseFloat((chatTotalOvr / chatCount).toFixed(1)) : 0;
+                const tChat = { visuals: chatCount > 0 ? parseFloat((chatVis/chatCount).toFixed(1)) : 0, gameplay: chatCount > 0 ? parseFloat((chatGame/chatCount).toFixed(1)) : 0, sound: chatCount > 0 ? parseFloat((chatSnd/chatCount).toFixed(1)) : 0, tech: chatCount > 0 ? parseFloat((chatTech/chatCount).toFixed(1)) : 0, atmosphere: chatCount > 0 ? parseFloat((chatAtm/chatCount).toFixed(1)) : 0 };
+                const chatTheoryAvg = calcTheoryAvg(tChat);
+
+                const meOvr = meData ? safeNum(meData.overall) : 0;
+                const tMe = meData && meData.theory ? meData.theory : {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0};
+                const meTheoryAvg = calcTheoryAvg(tMe);
+
+                const strScores = gameData.scores || {}; const strTier = strScores.tier || 'UNRANKED';
+                const tStr = strScores.theory || {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0};
+                const strTheoryAvg = calcTheoryAvg(tStr);
+
+                window.pageScores = { streamerAvg: strTheoryAvg, streamerTier: strTier, chat: chatOvr, me: meOvr };
+                
+                const renderLegendBox = (boxId, labelId, dotId, scoreId, scoreVal, colorObj) => {
+                    document.getElementById(boxId).style.cssText = getGlassBoxStyle(scoreVal);
+                    document.getElementById(labelId).style.color = getScoreColor(scoreVal, 1);
+                    document.getElementById(labelId).style.textShadow = getScoreShadow(scoreVal, false);
+                    document.getElementById(dotId).style.background = colorObj.border;
+                    document.getElementById(dotId).style.boxShadow = `0 0 5px ${colorObj.border}`;
+                    document.getElementById(scoreId).innerText = scoreVal > 0 ? scoreVal : '-';
+                    document.getElementById(scoreId).style.cssText = `color: #fff; text-shadow: ${getScoreShadow(scoreVal, false)};`;
+                };
+
+                renderLegendBox('legend-box-streamer', 'legend-label-streamer', 'dot-streamer', 'avg-streamer-score', strTheoryAvg, radarColors[0]);
+                renderLegendBox('legend-box-chat', 'legend-label-chat', 'dot-chat', 'avg-chat-score', chatTheoryAvg, radarColors[1]);
+                renderLegendBox('legend-box-me', 'legend-label-me', 'dot-me', 'avg-viewer-score', meTheoryAvg, radarColors[2]);
+
+                document.getElementById('breakdown-streamer').innerHTML = generateBreakdownHtml(tStr);
+                document.getElementById('breakdown-chat').innerHTML = generateBreakdownHtml(tChat);
+                document.getElementById('breakdown-viewer').innerHTML = generateBreakdownHtml(tMe);
+                
+                if (radarChart) {
+                    radarChart.data.datasets[0].data = [safeNum(tStr.visuals), safeNum(tStr.gameplay), safeNum(tStr.sound), safeNum(tStr.tech), safeNum(tStr.atmosphere)]; 
+                    radarChart.data.datasets[1].data = [safeNum(tChat.visuals), safeNum(tChat.gameplay), safeNum(tChat.sound), safeNum(tChat.tech), safeNum(tChat.atmosphere)]; 
+                    radarChart.data.datasets[2].data = [safeNum(tMe.visuals), safeNum(tMe.gameplay), safeNum(tMe.sound), safeNum(tMe.tech), safeNum(tMe.atmosphere)]; 
+                    const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary').trim();
+                    radarChart.options.scales.r.pointLabels.color = themeColor || '#c4d1b8'; radarChart.update();
+                }
+
+                applyPageVisuals(); // ВЫЗЫВАЕМ ПОСЛЕ РЕНДЕРА ЛЕГЕНДЫ!
+
+                const rateBtn = document.getElementById('rate-title-btn');
+                if (currentUser) {
+                    const isStreamer = currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase(); let hasRated = false;
+                    if (isStreamer && strTheoryAvg > 0) hasRated = true;
+                    if (!isStreamer && currentCommunityRatings[currentUser.id] && safeNum(currentCommunityRatings[currentUser.id].overall) > 0) hasRated = true;
+                    rateBtn.innerText = hasRated ? "Изменить оценку" : "Оценить игру"; rateBtn.style.opacity = "1"; rateBtn.style.pointerEvents = "auto";
+                } else { rateBtn.innerText = "Оценить игру"; rateBtn.style.opacity = "0.5"; rateBtn.style.pointerEvents = "none"; }
+
+                await loadComments(); 
+                loadingScreen.style.display = 'none'; document.getElementById('main-layout').style.display = 'flex';
+            } catch(e) { console.error(e); document.getElementById('loading-screen').innerHTML = `<span style="color:#ff5555;">ОШИБКА: ${e.message}</span><br><br><span style="font-size:16px; color:#a4b09c;">Нажми <b>Ctrl + F5</b>, чтобы сбросить кеш.</span>`; }
+        }
+
+        function createCommentCard(c, isReply = false, parentId = null) {
+            const authorId = c.userId || c.id, isMe = currentUser && authorId === currentUser.id, isAdminViewer = currentUser && currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+            const d = new Date(c.timestamp), dateStr = `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')} в ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+            const editedHtml = c.isEdited ? `<span class="edited-tag">(изменено)</span>` : '', uInfo = getUserInfo(c.displayName, c.userColor);
+
+            let actions = `<div class="comment-actions"><button class="btn-reply" onclick="toggleReplyBox('${parentId || c.id}', '${isReply ? c.displayName : ''}')">Ответить</button>${isMe ? `<button class="btn-edit" onclick="${isReply ? `editReply('${parentId}', '${c.rid}')` : `editComment('${c.id}')`}">Изменить</button>` : ''}${isMe || isAdminViewer ? `<button class="btn-del" onclick="${isReply ? `deleteReply('${parentId}', '${c.rid}')` : `deleteComment('${c.id}')`}">Удалить</button>` : ''}</div>`;
+            let ratingHtml = ''; const isAuthorAdmin = c.displayName.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+            const userRating = currentCommunityRatings[authorId] || (isAuthorAdmin ? gameData.scores : null);
+
+            if (userRating && (userRating.overall > 0 || userRating.tier)) {
+                let ovrDisp = userRating.overall || userRating.tier; if (isAuthorAdmin) ovrDisp = userRating.tier || 'UNRANKED';
+                const t = userRating.theory || {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0}; const ovrNum = Number(ovrDisp) || calcTheoryAvg(t) || 5; 
+                ratingHtml = `<div class="comment-rating-block"><div class="cr-overall tooltip-element" data-title="Итоговая оценка" style="color:${getScoreColor(ovrNum, 1)}; text-shadow:${getScoreShadow(ovrNum, true)};">${ovrDisp}</div><div class="cr-theory"><span class="tooltip-element" style="color:${getScoreColor(t.visuals, 1)}; text-shadow:${getScoreShadow(t.visuals, false)};" data-title="Визуал: ${t.visuals}">${t.visuals}</span><span class="tooltip-element" style="color:${getScoreColor(t.gameplay, 1)}; text-shadow:${getScoreShadow(t.gameplay, false)};" data-title="Геймплей: ${t.gameplay}">${t.gameplay}</span><span class="tooltip-element" style="color:${getScoreColor(t.sound, 1)}; text-shadow:${getScoreShadow(t.sound, false)};" data-title="Звук: ${t.sound}">${t.sound}</span><span class="tooltip-element" style="color:${getScoreColor(t.tech, 1)}; text-shadow:${getScoreShadow(t.tech, false)};" data-title="Тех. состояние: ${t.tech}">${t.tech}</span><span class="tooltip-element" style="color:${getScoreColor(t.atmosphere, 1)}; text-shadow:${getScoreShadow(t.atmosphere, false)};" data-title="Атмосфера: ${t.atmosphere}">${t.atmosphere}</span></div></div>`;
+            }
+
+            return `<div class="comment-item ${isReply ? 'reply-item' : ''}"><div class="comment-top"><div class="comment-author-block"><a href="profile.html?user=${authorId}" style="text-decoration: none;"><img src="${c.profileImage}" class="comment-avatar" style="cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></a><div class="author-details"><a href="profile.html?user=${authorId}" class="comment-author" style="color: ${uInfo.color}; text-decoration: none; cursor: pointer;">${c.displayName}</a><div>${uInfo.badge}</div></div></div>${ratingHtml}</div><div class="comment-content-wrap"><div class="comment-text">${c.text}</div><div class="comment-bottom"><span class="comment-date">${dateStr} ${editedHtml}</span>${actions}</div></div></div>`;
+        }
+
+        async function loadComments() { try { const res = await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/comments.json`, { cache: 'no-store' }); currentComments = (await res.json()) || {}; renderComments(); } catch(e) {} }
+
+        function toggleRepliesList(commentId) { const list = document.getElementById(`replies-list-${commentId}`), btn = document.getElementById(`toggle-btn-${commentId}`); if (list.style.display === 'none' || list.style.display === '') { list.style.display = 'flex'; btn.innerHTML = `▲ Скрыть ответы`; } else { list.style.display = 'none'; btn.innerHTML = `▼ Показать ответы (${btn.getAttribute('data-count')})`; } }
+
+        function toggleReplyBox(commentId, mentionName = '') { const box = document.getElementById(`reply-box-${commentId}`), textarea = document.getElementById(`reply-text-${commentId}`); box.style.display = 'flex'; if (mentionName) { const regex = /^@.*?, /; if (regex.test(textarea.value)) { textarea.value = textarea.value.replace(regex, `@${mentionName}, `); } else { textarea.value = `@${mentionName}, ` + textarea.value; } } textarea.focus(); }
+
+        function renderComments() {
+            const list = document.getElementById('comments-list'); list.innerHTML = '';
+            const arr = Object.entries(currentComments).map(([id, data]) => ({id, ...data})).sort((a,b) => b.timestamp - a.timestamp);
+            if (arr.length === 0) { list.innerHTML = '<div style="color: #6b7a62; text-align: center; padding: 20px; font-size: 18px;">Пока нет рецензий. Будь первым!</div>'; return; }
+
+            arr.forEach(c => {
+                const mainCommentHtml = createCommentCard(c); let repliesHtml = '', toggleRepliesBtn = '';
+                if (c.replies) {
+                    const replArr = Object.entries(c.replies).map(([rid, rdata]) => ({rid: rid, ...rdata})).sort((a,b)=>a.timestamp - b.timestamp);
+                    toggleRepliesBtn = `<button class="toggle-replies-btn" id="toggle-btn-${c.id}" data-count="${replArr.length}" onclick="toggleRepliesList('${c.id}')">▼ Показать ответы (${replArr.length})</button>`;
+                    repliesHtml = `<div class="replies-list" id="replies-list-${c.id}">` + replArr.map(rep => createCommentCard(rep, true, c.id)).join('') + `</div>`;
+                }
+                list.innerHTML += `<div class="comment-wrapper">${mainCommentHtml}${toggleRepliesBtn}${repliesHtml}<div class="reply-input-wrapper" id="reply-box-${c.id}"><textarea id="reply-text-${c.id}" class="comment-textarea" style="min-height: 50px;" placeholder="Написать ответ..."></textarea><button class="send-btn" id="send-reply-btn-${c.id}" style="padding: 8px 20px; font-size: 15px;" onclick="postReply('${c.id}')">Отправить ответ</button></div></div>`;
+            });
+
+            if (!editingTarget.type) { document.getElementById('comment-text').value = ''; document.getElementById('send-comment-btn').innerText = "Отправить"; }
+        }
+
+        async function postComment() {
+            if (!currentUser) { showToast("Сначала войди через Twitch!", true); return; }
+            const text = document.getElementById('comment-text').value.trim(); if (!text) return;
+            const btn = document.getElementById('send-comment-btn'); btn.innerText = "ОТПРАВКА..."; btn.style.pointerEvents = "none";
+            const commentId = editingTarget.type === 'comment' ? editingTarget.id : (Date.now() + '_' + currentUser.id);
+
+            try {
+                if (editingTarget.type === 'comment') { await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/comments/${commentId}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, isEdited: true }) }); } 
+                else { const commentData = { userId: currentUser.id, displayName: currentUser.display_name, profileImage: currentUser.profile_image_url, userColor: currentUser.color, text: text, timestamp: Date.now() }; await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/comments/${commentId}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(commentData) }); }
+                showToast(editingTarget.type === 'comment' ? "💬 Рецензия изменена!" : "💬 Рецензия добавлена!"); document.getElementById('comment-text').value = ''; editingTarget = { type: null, id: null, parentId: null }; btn.innerText = "Отправить"; await loadComments();
+            } catch(e) { showToast("❌ Ошибка при отправке!", true); btn.innerText = editingTarget.type === 'comment' ? "Сохранить изменения" : "Отправить"; }
+            btn.style.pointerEvents = "auto";
+        }
+
+        async function postReply(commentId) {
+            if (!currentUser) { showToast("Сначала войди через Twitch!", true); return; }
+            const inputEl = document.getElementById(`reply-text-${commentId}`); const text = inputEl.value.trim(); if (!text) return;
+            const btn = document.getElementById(`send-reply-btn-${commentId}`); btn.innerText = "ОТПРАВКА..."; btn.style.pointerEvents = "none";
+
+            try {
+                if (editingTarget.type === 'reply' && editingTarget.parentId === commentId) { await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/comments/${commentId}/replies/${editingTarget.id}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, isEdited: true }) }); editingTarget = { type: null, id: null, parentId: null }; showToast("💬 Ответ изменен!"); } 
+                else { const replyId = Date.now() + '_' + currentUser.id; const replyData = { userId: currentUser.id, displayName: currentUser.display_name, profileImage: currentUser.profile_image_url, userColor: currentUser.color, text: text, timestamp: Date.now() }; await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/comments/${commentId}/replies/${replyId}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(replyData) }); showToast("💬 Ответ добавлен!"); }
+                inputEl.value = ''; toggleReplyBox(commentId); btn.innerText = "Отправить ответ"; await loadComments();
+            } catch(e) { showToast("❌ Ошибка при отправке ответа!", true); btn.innerText = editingTarget.type === 'reply' ? "Сохранить" : "Отправить ответ"; }
+            btn.style.pointerEvents = "auto";
+        }
+
+        async function deleteComment(commentId) {
+            if (!confirm("Точно удалить этот комментарий со всеми ответами?")) return;
+            try { await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/comments/${commentId}.json`, { method: 'DELETE' }); if (editingTarget.id === commentId) { document.getElementById('comment-text').value = ''; editingTarget = { type: null, id: null, parentId: null }; document.getElementById('send-comment-btn').innerText = "Отправить"; } showToast("🗑️ Комментарий удален."); await loadComments(); } catch(e) {}
+        }
+
+        async function deleteReply(commentId, replyId) {
+            if (!confirm("Точно удалить этот ответ?")) return;
+            try { await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/comments/${commentId}/replies/${replyId}.json`, { method: 'DELETE' }); if (editingTarget.id === replyId) { document.getElementById(`reply-text-${commentId}`).value = ''; editingTarget = { type: null, id: null, parentId: null }; document.getElementById(`send-reply-btn-${commentId}`).innerText = "Отправить ответ"; } showToast("🗑️ Ответ удален."); await loadComments(); } catch(e) {}
+        }
+
+        function editComment(commentId) { if (currentComments[commentId]) { document.getElementById('comment-text').value = currentComments[commentId].text; document.getElementById('comment-text').focus(); document.getElementById('main-comment-area').scrollIntoView({ behavior: 'smooth', block: 'center' }); editingTarget = { type: 'comment', id: commentId, parentId: null }; document.getElementById('send-comment-btn').innerText = "Сохранить изменения"; } }
+
+        function editReply(commentId, replyId) { if (currentComments[commentId] && currentComments[commentId].replies && currentComments[commentId].replies[replyId]) { const textarea = document.getElementById(`reply-text-${commentId}`); textarea.value = currentComments[commentId].replies[replyId].text; document.getElementById(`reply-box-${commentId}`).style.display = 'flex'; textarea.focus(); editingTarget = { type: 'reply', id: replyId, parentId: commentId }; document.getElementById(`send-reply-btn-${commentId}`).innerText = "Сохранить"; } }
+
+        window.onload = loadGameData;
+    </script>
+</body>
+</html>
