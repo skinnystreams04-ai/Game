@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игры - Тир-лист</title>
-    <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+
     <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -447,7 +440,10 @@
             });
         }
 
-        window.onload = loadTierList;
+        window.onload = () => {
+            checkTwitchAuth(); // Сначала проверяем Twitch и рисуем профиль
+            loadTierList();    // Параллельно грузим карточки тир-листа
+        };
 
         // --- 2. МАССОВОЕ СОХРАНЕНИЕ ПОРЯДКА В БАЗУ ---
         async function updateTierOrder() {
