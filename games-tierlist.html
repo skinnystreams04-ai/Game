@@ -214,8 +214,6 @@
                     <button class="tier-tab" onclick="switchTierTab('me')" id="tab-me">Я</button>
                     <button class="tier-tab" onclick="switchTierTab('chat')" id="tab-chat">Чат</button>
                 </div>
-                <!-- Кнопка появится, только если включена вкладка "Я", и будет доступна только после изменений -->
-                <button id="save-tier-btn" class="save-tier-btn" style="display: none;" disabled onclick="saveMyTierList()">Сохранить</button>
             </div>
         </div>
         
@@ -487,10 +485,8 @@
             });
         }
 
-        // --- 4. ВКЛАДКИ И ЛОГИКА ПЕРЕСТРОЕНИЯ ДОСКИ ---
+        // --- 4. ВКЛАДКИ И АВТОМАТИЧЕСКАЯ ДОСКА ---
         let currentTierTab = 'streamer';
-        let hasUnsavedChanges = false;
-        let lastSaveTime = 0;
 
         async function switchTierTab(tabName) {
             if (tabName === 'me' && !currentUser) { alert('Сначала авторизуйтесь через Twitch!'); return; }
@@ -498,49 +494,75 @@
             
             document.querySelectorAll('.tier-tab').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
-            
-            const saveBtn = document.getElementById('save-tier-btn');
-            if (saveBtn) saveBtn.style.display = (tabName === 'me') ? 'block' : 'none';
 
-            // Подгружаем базу зрителей, если мы перешли в "Я" или "Чат" и базы еще нет
+            // Если вкладка "Я" или "Чат" - подгружаем оценки зрителей, если их еще нет в памяти
             if ((tabName === 'me' || tabName === 'chat') && !window.globalCommData) {
                 document.getElementById(`tab-${tabName}`).innerText = "...";
-                const res = await fetch(`${FIREBASE_BASE}/games_community_db.json`);
-                window.globalCommData = await res.json() || {};
+                try {
+                    const res = await fetch(`${FIREBASE_BASE}/games_community_db.json`);
+                    window.globalCommData = await res.json() || {};
+                } catch(e) { console.error("Ошибка загрузки оценок", e); }
                 document.getElementById(`tab-${tabName}`).innerText = tabName === 'me' ? 'Я' : 'Чат';
             }
             
-            renderBoardState(); // Переставляем карточки!
+            renderBoardState(); // Автоматически переставляем карточки
         }
 
-        // Главная функция: двигает карточки по экрану в зависимости от выбранной вкладки
+        // Переводим 10-балльную оценку в букву Тира
+        function getAutoTier(score) {
+            if (score >= 9.0) return 'S';
+            if (score >= 8.0) return 'A';
+            if (score >= 7.0) return 'B';
+            if (score >= 5.0) return 'C';
+            if (score >= 3.0) return 'D';
+            if (score > 0) return 'F';
+            return 'UNRANKED';
+        }
+
+        // Авто-расстановка
         function renderBoardState() {
             const backlog = document.querySelector('.backlog-container');
             const gamesArray = Object.entries(gamesData).map(([id, data]) => ({ id, ...data }));
 
             gamesArray.forEach(game => {
-                let tier = 'UNRANKED'; let position = 999;
+                let tier = 'UNRANKED'; 
+                let sortValue = 0;
 
                 if (currentTierTab === 'streamer') {
+                    // Твоя ручная расстановка
                     tier = game.scores?.tier || 'UNRANKED';
-                    position = game.scores?.position || 999;
-                } else if (currentTierTab === 'me') {
+                    sortValue = game.scores?.position || 999; 
+                } 
+                else if (currentTierTab === 'me') {
+                    // Оценка текущего зрителя
                     if (currentUser && window.globalCommData && window.globalCommData[game.id]?.ratings?.[currentUser.id]) {
-                        const myData = window.globalCommData[game.id].ratings[currentUser.id];
-                        tier = myData.tier || 'UNRANKED';
-                        position = myData.position || 999;
+                        const ovr = Number(window.globalCommData[game.id].ratings[currentUser.id].overall) || 0;
+                        tier = getAutoTier(ovr);
+                        sortValue = -ovr; // Минус, чтобы 9.5 стояли левее, чем 9.0
                     }
-                } else if (currentTierTab === 'chat') {
-                    // Пока для чата все скидываем в бэклог (сделаем логику среднего балла позже)
-                    tier = 'UNRANKED';
+                } 
+                else if (currentTierTab === 'chat') {
+                    // Средняя оценка чата
+                    if (window.globalCommData && window.globalCommData[game.id]?.ratings) {
+                        let sum = 0, count = 0;
+                        Object.values(window.globalCommData[game.id].ratings).forEach(r => {
+                            const ovr = Number(r.overall) || 0;
+                            if (ovr > 0) { sum += ovr; count++; }
+                        });
+                        const avg = count > 0 ? (sum / count) : 0;
+                        tier = getAutoTier(avg);
+                        sortValue = -avg; 
+                    }
                 }
 
-                game._tempTier = tier; game._tempPos = position;
+                game._tempTier = tier; 
+                game._tempSort = sortValue;
             });
 
-            gamesArray.sort((a, b) => a._tempPos - b._tempPos);
+            // Сортируем: слева направо по убыванию баллов
+            gamesArray.sort((a, b) => a._tempSort - b._tempSort);
 
-            // Физически перемещаем карточки в нужные ряды
+            // Физически переносим карточки
             gamesArray.forEach(game => {
                 const card = document.getElementById(game.id);
                 if (!card) return;
@@ -552,68 +574,19 @@
             });
         }
 
-        async function saveMyTierList() {
-            if (!hasUnsavedChanges) return;
-            const now = Date.now();
-            if (now - lastSaveTime < 15000) { alert("Подождите немного (анти-спам)!"); return; }
-            if (!currentUser) return;
-            
-            const btn = document.getElementById('save-tier-btn');
-            btn.innerText = "СОХРАНЕНИЕ..."; btn.disabled = true;
-            lastSaveTime = now;
-            
-            // Собираем позиции всех карточек
-            const updates = {};
-            document.querySelectorAll('.tier-row').forEach(row => {
-                const tier = row.getAttribute('data-tier');
-                row.querySelectorAll('.tier-item').forEach((card, index) => {
-                    updates[`${card.id}/ratings/${currentUser.id}/tier`] = tier;
-                    updates[`${card.id}/ratings/${currentUser.id}/position`] = index + 1;
-                    updates[`${card.id}/ratings/${currentUser.id}/displayName`] = currentUser.display_name;
-                    updates[`${card.id}/ratings/${currentUser.id}/profileImage`] = currentUser.profile_image_url;
-                });
-            });
-            document.querySelectorAll('.backlog-container .tier-item').forEach((card, index) => {
-                updates[`${card.id}/ratings/${currentUser.id}/tier`] = 'UNRANKED';
-                updates[`${card.id}/ratings/${currentUser.id}/position`] = index + 1;
-                updates[`${card.id}/ratings/${currentUser.id}/displayName`] = currentUser.display_name;
-                updates[`${card.id}/ratings/${currentUser.id}/profileImage`] = currentUser.profile_image_url;
-            });
-
-            // Отправляем в Firebase (games_community_db)
-            try {
-                await fetch(`${FIREBASE_BASE}/games_community_db.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
-                
-                // Обновляем локальную память, чтобы доска не сбросилась
-                if (!window.globalCommData) window.globalCommData = {};
-                for (let key in updates) {
-                    const parts = key.split('/'); const gameId = parts[0], field = parts[3];
-                    if (!window.globalCommData[gameId]) window.globalCommData[gameId] = { ratings: {} };
-                    if (!window.globalCommData[gameId].ratings) window.globalCommData[gameId].ratings = {};
-                    if (!window.globalCommData[gameId].ratings[currentUser.id]) window.globalCommData[gameId].ratings[currentUser.id] = {};
-                    window.globalCommData[gameId].ratings[currentUser.id][field] = updates[key];
-                }
-
-                hasUnsavedChanges = false;
-                btn.innerText = "СОХРАНЕНО"; btn.style.borderColor = "#555"; btn.style.color = "#555";
-            } catch(e) {
-                alert("Ошибка сохранения: " + e.message);
-                btn.innerText = "ОШИБКА";
-            }
-        }
-
-        // --- 5. ФИЗИКА ПЕРЕТАСКИВАНИЯ ---
+        // --- 5. ФИЗИКА ПЕРЕТАСКИВАНИЯ (ТОЛЬКО ДЛЯ СТРИМЕРА) ---
         window.isDraggingCard = false;
         document.addEventListener('dragstart', drag);
         document.addEventListener('dragend', dragEnd);
 
         function drag(ev) {
-            // Проверяем, ты ли это зашел на сайт
             const isStreamer = currentUser && currentUser.login.toLowerCase() === 'skinwalker_nozxc';
-
-            // ЖЕЛЕЗОБЕТОННАЯ ЛОГИКА:
-            if (currentTierTab === 'chat') { ev.preventDefault(); return; } // Во вкладке Чат никто не таскает
-            if (currentTierTab === 'streamer' && !isStreamer) { ev.preventDefault(); return; } // Во вкладке Стример таскаешь ТОЛЬКО ты
+            
+            // Блокируем всех, кроме тебя, и блокируем тебя, если ты не на своей вкладке
+            if (!isStreamer || currentTierTab !== 'streamer') {
+                ev.preventDefault();
+                return;
+            }
 
             window.isDraggingCard = true; 
             const card = ev.target.closest('.tier-item');
@@ -629,22 +602,10 @@
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             
             const isStreamer = currentUser && currentUser.login.toLowerCase() === 'skinwalker_nozxc';
-            
-            // Если ты двигаешь карточки в своей вкладке - мгновенно сохраняем в главную базу!
-            if (currentTierTab === 'streamer' && isStreamer) {
-                updateTierOrder(); 
-            } 
-            // Если зритель (или ты) двигает в личной вкладке - зажигаем кнопку "Сохранить"
-            else if (currentTierTab === 'me') {
-                hasUnsavedChanges = true;
-                const btn = document.getElementById('save-tier-btn');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerText = "Сохранить";
-                    btn.style.borderColor = "#a6e3a1";
-                    btn.style.color = "#a6e3a1";
-                }
+            if (isStreamer && currentTierTab === 'streamer') {
+                updateTierOrder(); // Сохраняем в базу автоматически после броска
             }
+            
             setTimeout(() => { window.isDraggingCard = false; }, 100);
         }
 
