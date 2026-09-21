@@ -288,9 +288,11 @@
         function loginTwitch() { window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=`; }
         function logoutTwitch() { try { localStorage.removeItem('twitch_token'); } catch(e){} location.reload(); }
 
+        window.globalUsersDB = {};
+
         function getUserInfo(username, fallbackTwitchColor) {
             const lowerName = username.toLowerCase();
-            const dbUser = window.globalUsersDB[lowerName]; 
+            const dbUser = window.globalUsersDB ? window.globalUsersDB[lowerName] : null;
             let r = "F"; let g = 0; let t = 0; let c = fallbackTwitchColor || '#a4b09c';
             if (dbUser) {
                 if (dbUser.role) r = dbUser.role.toUpperCase();
@@ -306,11 +308,11 @@
 
         async function checkTwitchAuth() {
             try {
-                // Подгружаем глобальную базу для билетов и бейджей
-                try {
-                    const dbRes = await fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' });
-                    if (dbRes.ok) window.globalUsersDB = (await dbRes.json()) || {};
-                } catch(e) {}
+                // Грузим базу юзеров параллельно в фоне, чтобы не тормозить профиль
+                fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' })
+                    .then(res => res.json())
+                    .then(data => { window.globalUsersDB = data || {}; renderProfileUI(); })
+                    .catch(e => console.log(e));
 
                 const hash = window.location.hash;
                 let token = null;
@@ -319,7 +321,7 @@
                 if (hash && hash.includes('access_token')) {
                     token = new URLSearchParams(hash.substring(1)).get('access_token');
                     try { localStorage.setItem('twitch_token', token); } catch(e){}
-                    window.history.replaceState(null, null, window.location.pathname + window.location.search); 
+                    window.history.replaceState(null, null, window.location.pathname + window.location.search);
                 }
 
                 if (token) {
@@ -333,31 +335,40 @@
                         currentUser.color = (colorData.data && colorData.data[0] && colorData.data[0].color) ? colorData.data[0].color : null;
                     } catch(e) {}
                     
-                    const uInfo = getUserInfo(currentUser.login, currentUser.color);
-                    
-                    document.getElementById('nav-auth').innerHTML = `
-                        <div class="user-profile-neon">
-                            <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">
-                                <img src="${currentUser.profile_image_url}" class="user-avatar">
+                    renderProfileUI(); // Отрисовываем сам профиль
+                }
+            } catch (e) { console.error('Ошибка авторизации', e); }
+        }
+
+        function renderProfileUI() {
+            if (!currentUser) return;
+            const uInfo = getUserInfo(currentUser.login, currentUser.color);
+            const authDiv = document.getElementById('nav-auth');
+            if (authDiv) {
+                authDiv.innerHTML = `
+                    <div class="user-profile-neon">
+                        <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">
+                            <img src="${currentUser.profile_image_url}" class="user-avatar">
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-top">
+                                <span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color}; cursor: pointer;" onclick="window.location.href='profile.html?user=${currentUser.id}'">${currentUser.display_name}</span>
+                                <button class="logout-neon" onclick="logoutTwitch()">Выйти</button>
                             </div>
-                            <div class="profile-info">
-                                <div class="profile-top">
-                                    <span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.filter='brightness(1.3)'" onmouseout="this.style.filter='none'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">${currentUser.display_name}</span>
-                                    <button class="logout-neon" onclick="logoutTwitch()">Выйти</button>
+                            <div class="profile-bottom">
+                                ${uInfo.badge}
+                                <div class="wallet-item" style="color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);">
+                                    <img src="icons/BILET_GOLD.png" onerror="this.style.display='none'"> <span>${uInfo.gold}</span>
                                 </div>
-                                <div class="profile-bottom">
-                                    ${uInfo.badge}
-                                    <div class="wallet-item" style="color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);">
-                                        <img src="icons/BILET_GOLD.png"> <span>${uInfo.gold}</span>
-                                    </div>
-                                    <div class="wallet-item" style="color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.3);">
-                                        <img src="icons/BILET.png"> <span>${uInfo.tickets}</span>
-                                    </div>
+                                <div class="wallet-item" style="color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.3);">
+                                    <img src="icons/BILET.png" onerror="this.style.display='none'"> <span>${uInfo.tickets}</span>
                                 </div>
                             </div>
                         </div>
-                    `;
-                }
+                    </div>
+                `;
+            }
+        }
             } catch (e) { console.error('Ошибка авторизации', e); }
         }
 

@@ -486,8 +486,86 @@
         }, 500);
 
         window.globalUsersDB = {};
-        const radarColors = [ { bg: 'rgba(203, 166, 247, 0.2)', border: '#cba6f7' }, { bg: 'rgba(184, 168, 123, 0.2)', border: '#b8a87b' }, { bg: 'rgba(166, 227, 161, 0.2)', border: '#a6e3a1' } ];
-        if (typeof Chart !== 'undefined') { Chart.defaults.font.family = "'Neucha', cursive, sans-serif"; Chart.defaults.color = "#829c73"; }
+
+        function getUserInfo(username, fallbackTwitchColor) {
+            const lowerName = username.toLowerCase();
+            const dbUser = window.globalUsersDB ? window.globalUsersDB[lowerName] : null;
+            let r = "F"; let g = 0; let t = 0; let c = fallbackTwitchColor || '#a4b09c';
+            if (dbUser) {
+                if (dbUser.role) r = dbUser.role.toUpperCase();
+                if (dbUser.wallet_gold) g = dbUser.wallet_gold;
+                if (dbUser.wallet_tickets) t = dbUser.wallet_tickets;
+                if (dbUser.color && dbUser.color.trim() !== "") c = dbUser.color;
+            }
+            let badgeHtml = `<span class="role-badge role-f">FOLLOW</span>`;
+            if (r === 'SUB' || r === 'SUBSCRIBER') badgeHtml = `<span class="role-badge role-sub">SUB</span>`;
+            else if (r === 'VIP') badgeHtml = `<span class="role-badge role-vip">VIP</span>`;
+            return { role: r, gold: g, tickets: t, color: c, badge: badgeHtml };
+        }
+
+        async function checkTwitchAuth() {
+            try {
+                // Грузим базу юзеров параллельно в фоне, чтобы не тормозить профиль
+                fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' })
+                    .then(res => res.json())
+                    .then(data => { window.globalUsersDB = data || {}; renderProfileUI(); })
+                    .catch(e => console.log(e));
+
+                const hash = window.location.hash;
+                let token = null;
+                try { token = localStorage.getItem('twitch_token'); } catch(e){}
+
+                if (hash && hash.includes('access_token')) {
+                    token = new URLSearchParams(hash.substring(1)).get('access_token');
+                    try { localStorage.setItem('twitch_token', token); } catch(e){}
+                    window.history.replaceState(null, null, window.location.pathname + window.location.search);
+                }
+
+                if (token) {
+                    const res = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } });
+                    if (res.status === 401) { try { localStorage.removeItem('twitch_token'); } catch(e){} return; }
+                    currentUser = (await res.json()).data[0];
+
+                    try {
+                        const colorRes = await fetch(`https://api.twitch.tv/helix/chat/color?user_id=${currentUser.id}`, { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } });
+                        const colorData = await colorRes.json();
+                        currentUser.color = (colorData.data && colorData.data[0] && colorData.data[0].color) ? colorData.data[0].color : null;
+                    } catch(e) {}
+                    
+                    renderProfileUI(); // Отрисовываем сам профиль
+                }
+            } catch (e) { console.error('Ошибка авторизации', e); }
+        }
+
+        function renderProfileUI() {
+            if (!currentUser) return;
+            const uInfo = getUserInfo(currentUser.login, currentUser.color);
+            const authDiv = document.getElementById('nav-auth');
+            if (authDiv) {
+                authDiv.innerHTML = `
+                    <div class="user-profile-neon">
+                        <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">
+                            <img src="${currentUser.profile_image_url}" class="user-avatar">
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-top">
+                                <span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color}; cursor: pointer;" onclick="window.location.href='profile.html?user=${currentUser.id}'">${currentUser.display_name}</span>
+                                <button class="logout-neon" onclick="logoutTwitch()">Выйти</button>
+                            </div>
+                            <div class="profile-bottom">
+                                ${uInfo.badge}
+                                <div class="wallet-item" style="color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);">
+                                    <img src="icons/BILET_GOLD.png" onerror="this.style.display='none'"> <span>${uInfo.gold}</span>
+                                </div>
+                                <div class="wallet-item" style="color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.3);">
+                                    <img src="icons/BILET.png" onerror="this.style.display='none'"> <span>${uInfo.tickets}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
 
         function getScoreColor(score, alpha = 1) {
             const numScore = Number(score);
