@@ -421,6 +421,12 @@
         let currentDisplayMode = localStorage.getItem('skinwalker_display_mode') || 'score';
         let visRoles = JSON.parse(localStorage.getItem('skinwalker_vis_roles')) || { streamer: true, me: true, chat: true };
 
+        const radarColors = [
+            { bg: 'rgba(203, 166, 247, 0.2)', border: '#cba6f7' }, 
+            { bg: 'rgba(184, 168, 123, 0.2)', border: '#b8a87b' }, 
+            { bg: 'rgba(166, 227, 161, 0.2)', border: '#a6e3a1' }  
+        ];
+
         function toggleVisualMenu() { document.getElementById('visual-dropdown').classList.toggle('show'); }
         window.addEventListener('click', function(e) { if (!document.getElementById('visual-dropdown').contains(e.target)) document.getElementById('visual-dropdown').classList.remove('show'); });
 
