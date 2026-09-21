@@ -452,7 +452,7 @@
                     box.style.cssText = `background: ${tier.color}15; border: 1px solid ${tier.color}60; box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 15px ${tier.color}15; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 5px; border-radius: 8px; flex: 1; cursor: pointer; transition: 0.3s;`;
                     label.style.cssText = `color: ${tier.color}; border-bottom: 1px solid ${tier.color}60; text-shadow: 0 0 8px ${tier.color}; width: 100%; padding-bottom: 4px; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; text-align: center;`;
                     label.innerText = labelName;
-                    val.innerHTML = forceTierDisplay ? tier.letter : tier.letter + (score > 0 ? `<div style="font-size: 12px; color: ${tier.color}; opacity: 0.8; margin-top: -2px; font-family: sans-serif; font-weight: bold; letter-spacing: 1px;">${score}</div>` : '');
+                    val.innerHTML = tier.letter;
                     val.style.cssText = `color: ${tier.color}; font-size: 44px; font-weight: bold; line-height: 1; text-shadow: ${tier.glow}; font-family: 'Neucha', cursive; text-align: center;`;
                 } else {
                     box.style.cssText = getGlassBoxStyle(score) + ' display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 5px; border-radius: 8px; flex: 1; cursor: pointer; transition: 0.3s;';

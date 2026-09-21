@@ -66,7 +66,7 @@
         .role-toggle-btn.active.chat { color: #b8a87b; border-bottom-color: #b8a87b; text-shadow: 0 0 8px rgba(184, 168, 123, 0.6); }
 
         /* ОСНОВА ТИР-ЛИСТА */
-        .tier-board { position: relative; margin: 20px 40px; display: flex; flex-direction: column; background: #0b0d0a; border: 1px solid var(--theme-panel-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; transition: border-color 0.5s ease; }
+        .tier-board { position: relative; margin: 20px 40px; display: flex; flex-direction: column; background: #0b0d0a; border: 1px solid var(--theme-panel-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; transition: border-color 0.5s ease; user-select: none; }
         .board-header { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: rgba(14, 17, 13, 0.8); border-bottom: 1px solid var(--theme-panel-border); transition: border-color 0.5s ease; }
         .board-title { font-family: 'Neucha', cursive; color: var(--theme-primary); font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--theme-glow); transition: color 0.5s ease, text-shadow 0.5s ease; }
         
@@ -91,7 +91,7 @@
         .backlog-title { position: absolute; top: -12px; left: 30px; background: #0b0d0a; padding: 0 15px; color: var(--theme-primary); font-size: 16px; font-weight: bold; text-transform: uppercase; border: 1px solid var(--theme-panel-border); border-radius: 6px; letter-spacing: 1px; transition: color 0.5s ease, border-color 0.5s ease; }
 
         /* КАРТОЧКА ИГРЫ */
-        .tier-item { width: 120px; height: 180px; border-radius: 6px; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background-size: cover; background-position: center; transition: all 0.2s ease-out; border: 2px solid transparent; }
+        .tier-item { width: 120px; height: 180px; border-radius: 6px; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background-size: cover; background-position: center; transition: all 0.2s ease-out; border: 2px solid transparent; user-select: none; -webkit-user-drag: element; }
         .tier-item:hover { transform: scale(1.1) translateY(-5px); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.8), 0 0 15px var(--theme-light, rgba(255,255,255,0.1)); border-color: var(--theme-light, rgba(255,255,255,0.3)); }
         .tier-item:active { transform: scale(1.05); opacity: 0.9; z-index: 20; box-shadow: 0 0 20px var(--theme-light, #a6e3a1); border-color: var(--theme-light, #a6e3a1); }
         .tier-item.dragging { opacity: 0.5 !important; transform: scale(1.05); z-index: 99; pointer-events: none; }
@@ -101,7 +101,7 @@
         .backlog-container.drag-over { border-color: #a6e3a1; background: rgba(166, 227, 161, 0.05); }
 
         .front-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px 6px 6px 6px; box-sizing: border-box; background: linear-gradient(0deg, rgba(11,13,10,1) 0%, rgba(11,13,10,0.8) 50%, transparent 100%); display: flex; flex-direction: column; justify-content: flex-end; pointer-events: none; }
-        .game-title { color: var(--theme-light, #e4e4e4); font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: center; text-shadow: 2px 2px 4px #000, 0 0 10px rgba(0,0,0,0.8); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.1; transition: color 0.3s; }
+        .game-title { color: var(--theme-light, #e4e4e4); font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: center; text-shadow: 2px 2px 4px #000, 0 0 10px rgba(0,0,0,0.8); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.1; transition: color 0.3s; pointer-events: none; user-select: none; }
 
         /* ДИНАМИЧЕСКИЙ ФОН */
         #dynamic-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(40px); opacity: 0; z-index: 0; pointer-events: none; transition: opacity 0.5s ease, background-image 0.5s ease; }
@@ -318,10 +318,29 @@
             }
         });
 
+        function applyVisualToggles() {
+            const tabS = document.getElementById('tab-streamer');
+            const tabM = document.getElementById('tab-me');
+            const tabC = document.getElementById('tab-chat');
+            
+            // Скрываем или показываем вкладки в шапке тир-листа
+            if (tabS) tabS.style.display = visRoles.streamer ? 'block' : 'none';
+            if (tabM) tabM.style.display = visRoles.me ? 'block' : 'none';
+            if (tabC) tabC.style.display = visRoles.chat ? 'block' : 'none';
+
+            // Если текущая вкладка была выключена в меню - перекидываем на первую доступную
+            if (!visRoles[currentTierTab]) {
+                if (visRoles.streamer) switchTierTab('streamer');
+                else if (visRoles.me) switchTierTab('me');
+                else if (visRoles.chat) switchTierTab('chat');
+            }
+        }
+
         function toggleRoleVis(role) {
             visRoles[role] = !visRoles[role];
             localStorage.setItem('skinwalker_vis_roles', JSON.stringify(visRoles)); 
             document.getElementById(`toggle-${role}`).classList.toggle('active', visRoles[role]);
+            applyVisualToggles();
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -329,6 +348,7 @@
                 const btn = document.getElementById(`toggle-${role}`);
                 if (btn) btn.classList.toggle('active', visRoles[role]);
             });
+            applyVisualToggles();
         });
 
         // --- 3. ЗАГРУЗКА И ОТРИСОВКА ИГР ---
