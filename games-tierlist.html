@@ -144,15 +144,16 @@
         .status-online { background: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; }
         .status-offline { background: #555; }
 
-        /* ВКЛАДКИ И КНОПКА СОХРАНЕНИЯ */
-        .tier-tabs { display: flex; background: rgba(0,0,0,0.4); border: 1px solid var(--theme-panel-border); border-radius: 8px; overflow: hidden; }
-        .tier-tab { background: transparent; border: none; color: #6b7a62; padding: 8px 20px; font-family: 'Neucha', cursive; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; outline: none; }
-        .tier-tab:hover { color: var(--theme-light, #c4d1b8); background: rgba(255,255,255,0.05); }
-        .tier-tab.active { background: rgba(166, 227, 161, 0.15); color: #a6e3a1; box-shadow: inset 0 0 10px rgba(166, 227, 161, 0.2); }
+        /* ВКЛАДКИ (СТРИМЕР / Я / ЧАТ) */
+        .tier-tabs { display: flex; gap: 20px; align-items: center; }
+        .tier-tab { background: transparent; border: none; color: #6b7a62; font-family: 'Neucha', cursive; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; outline: none; padding: 5px 0; border-bottom: 2px solid transparent; }
+        .tier-tab:hover { color: #c4d1b8; }
+        .tier-tab.active { color: #a6e3a1; border-bottom: 2px solid #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.5); }
         
-        .save-tier-btn { background: #121612; border: 1px solid #a6e3a1; color: #a6e3a1; padding: 8px 20px; border-radius: 8px; font-family: 'Neucha', cursive; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; box-shadow: 0 0 10px rgba(166, 227, 161, 0.2); }
-        .save-tier-btn:hover:not(:disabled) { background: #a6e3a1; color: #0b0d0a; box-shadow: 0 0 20px rgba(166, 227, 161, 0.6); }
-        .save-tier-btn:disabled { border-color: #555; color: #555; box-shadow: none; cursor: not-allowed; background: #121612; }
+        /* КНОПКА СОХРАНЕНИЯ */
+        .save-tier-btn { background: transparent; border: 1px solid #a6e3a1; color: #a6e3a1; padding: 6px 15px; border-radius: 6px; font-family: 'Neucha', cursive; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .save-tier-btn:hover:not(:disabled) { background: rgba(166, 227, 161, 0.2); box-shadow: 0 0 15px rgba(166, 227, 161, 0.4); }
+        .save-tier-btn:disabled { border-color: #333; color: #555; cursor: not-allowed; background: transparent; box-shadow: none; }
 
     </style>
 </head>
@@ -207,14 +208,14 @@
         <div class="board-header" style="position: relative; z-index: 1;">
             <div class="board-title">Игровой Тир-лист</div>
             
-            <!-- ПЕРЕКЛЮЧАТЕЛЬ ТИР-ЛИСТОВ И КНОПКА СОХРАНЕНИЯ -->
-            <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 30px;">
                 <div class="tier-tabs">
                     <button class="tier-tab active" onclick="switchTierTab('streamer')" id="tab-streamer">Стример</button>
                     <button class="tier-tab" onclick="switchTierTab('me')" id="tab-me">Я</button>
                     <button class="tier-tab" onclick="switchTierTab('chat')" id="tab-chat">Чат</button>
                 </div>
-                <button id="save-tier-btn" class="save-tier-btn" style="display: none;" onclick="saveMyTierList()">Сохранить</button>
+                <!-- Кнопка появится, только если включена вкладка "Я", и будет доступна только после изменений -->
+                <button id="save-tier-btn" class="save-tier-btn" style="display: none;" disabled onclick="saveMyTierList()">Сохранить</button>
             </div>
         </div>
         
@@ -363,12 +364,7 @@
                                 <div class="wallet-item" style="color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.3);">
                                     <img src="icons/BILET.png" onerror="this.style.display='none'"> <span>${uInfo.tickets}</span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
+                           
             } catch (e) { console.error('Ошибка авторизации', e); }
         }
 
@@ -588,33 +584,55 @@
 
         // Глобальные переменные для логики вкладок
         let currentTierTab = 'streamer';
-        let lastSaveTime = 0; // Для кулдауна
+        let hasUnsavedChanges = false; // Флаг: были ли изменения
 
         function switchTierTab(tabName) {
             currentTierTab = tabName;
-            
-            // Красим активную вкладку
             document.querySelectorAll('.tier-tab').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
-            // Показываем кнопку "Сохранить" только во вкладке "Я"
             const saveBtn = document.getElementById('save-tier-btn');
-            saveBtn.style.display = (tabName === 'me') ? 'block' : 'none';
-            
-            // В следующем шаге мы добавим сюда функцию перерисовки карточек!
+            if (saveBtn) saveBtn.style.display = (tabName === 'me') ? 'block' : 'none';
         }
 
-        // Кнопка сохранения с кулдауном 15 секунд
+        function dragEnd(ev) {
+            const card = ev.target.closest('.tier-item');
+            if (card) card.classList.remove('dragging');
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            
+            // Если зритель передвинул карточку, активируем кнопку "Сохранить"
+            if (currentTierTab === 'me') {
+                hasUnsavedChanges = true;
+                const btn = document.getElementById('save-tier-btn');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "Сохранить";
+                    btn.style.borderColor = "#a6e3a1";
+                    btn.style.color = "#a6e3a1";
+                }
+            }
+            
+            setTimeout(() => { window.isDraggingCard = false; }, 100);
+        }
+
         function saveMyTierList() {
-            const now = Date.now();
-            if (now - lastSaveTime < 15000) {
-                alert("Подождите немного перед следующим сохранением!");
-                return;
-            }
-            if (!currentUser) {
-                alert("Пожалуйста, авторизуйтесь через Twitch!");
-                return;
-            }
+            if (!hasUnsavedChanges) return; // Если нечего сохранять - ничего не делаем
+            if (!currentUser) { alert("Пожалуйста, авторизуйтесь через Twitch!"); return; }
+            
+            const btn = document.getElementById('save-tier-btn');
+            btn.innerText = "Сохранение...";
+            btn.disabled = true;
+            
+            // Тут позже мы напишем сбор карточек и отправку в Firebase
+            
+            // Имитируем успешное сохранение:
+            setTimeout(() => { 
+                hasUnsavedChanges = false;
+                btn.innerText = "Сохранено"; 
+                btn.style.borderColor = "#555";
+                btn.style.color = "#555";
+            }, 1000);
+        }
             
             // Заглушка, тут будет логика сбора тиров
             alert("Тир-лист сохраняется..."); 
