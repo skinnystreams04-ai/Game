@@ -283,13 +283,15 @@
         const TWITCH_CLIENT_ID = 'gko3y2nhxg0ocvte0ru970pbau3eiq';
         const REDIRECT_URI = 'https://skinnystreams04-ai.github.io/Game/index.html'; 
         const FIREBASE_BASE = 'https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app';
+        const FIREBASE_DB_URL = "https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app/games_db.json";
+
         let currentUser = null;
         window.globalUsersDB = {};
+        window.globalCommData = null; 
 
+        // --- 1. АВТОРИЗАЦИЯ И ПРОФИЛЬ ---
         function loginTwitch() { window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=`; }
         function logoutTwitch() { try { localStorage.removeItem('twitch_token'); } catch(e){} location.reload(); }
-
-        window.globalUsersDB = {};
 
         function getUserInfo(username, fallbackTwitchColor) {
             const lowerName = username.toLowerCase();
@@ -309,7 +311,6 @@
 
         async function checkTwitchAuth() {
             try {
-                // Грузим базу юзеров параллельно в фоне, чтобы не тормозить профиль
                 fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' })
                     .then(res => res.json())
                     .then(data => { window.globalUsersDB = data || {}; renderProfileUI(); })
@@ -336,7 +337,7 @@
                         currentUser.color = (colorData.data && colorData.data[0] && colorData.data[0].color) ? colorData.data[0].color : null;
                     } catch(e) {}
                     
-                    renderProfileUI(); // Отрисовываем сам профиль
+                    renderProfileUI();
                 }
             } catch (e) { console.error('Ошибка авторизации', e); }
         }
@@ -348,12 +349,12 @@
             if (authDiv) {
                 authDiv.innerHTML = `
                     <div class="user-profile-neon">
-                        <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">
+                        <div class="avatar-glow-wrap" style="--user-color: ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">
                             <img src="${currentUser.profile_image_url}" class="user-avatar">
                         </div>
                         <div class="profile-info">
                             <div class="profile-top">
-                                <span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color}; cursor: pointer;" onclick="window.location.href='profile.html?user=${currentUser.id}'">${currentUser.display_name}</span>
+                                <span class="profile-name-top" style="color: ${uInfo.color}; text-shadow: 0 0 8px ${uInfo.color}; cursor: pointer; transition: 0.2s;" onmouseover="this.style.filter='brightness(1.3)'" onmouseout="this.style.filter='none'" onclick="window.location.href='profile.html?user=${currentUser.id}'" title="Мой профиль">${currentUser.display_name}</span>
                                 <button class="logout-neon" onclick="logoutTwitch()">Выйти</button>
                             </div>
                             <div class="profile-bottom">
@@ -364,33 +365,26 @@
                                 <div class="wallet-item" style="color: #a6e3a1; text-shadow: 0 0 10px rgba(166, 227, 161, 0.3);">
                                     <img src="icons/BILET.png" onerror="this.style.display='none'"> <span>${uInfo.tickets}</span>
                                 </div>
-                           
-            } catch (e) { console.error('Ошибка авторизации', e); }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
-        // --- ЛОГИКА МЕНЮ ВИЗУАЛА ---
+        // --- 2. МЕНЮ ВИЗУАЛА ---
         let visRoles = JSON.parse(localStorage.getItem('skinwalker_games_roles')) || { streamer: true, me: true, chat: true };
-
-        function toggleVisualMenu() { 
-            document.getElementById('visual-dropdown').classList.toggle('show'); 
-        }
-        
+        function toggleVisualMenu() { document.getElementById('visual-dropdown').classList.toggle('show'); }
         window.addEventListener('click', function(e) {
             if (!document.getElementById('visual-dropdown').contains(e.target)) {
                 document.getElementById('visual-dropdown').classList.remove('show');
             }
         });
-
         function toggleRoleVis(role) {
             visRoles[role] = !visRoles[role];
-            localStorage.setItem('skinwalker_games_roles', JSON.stringify(visRoles)); // Синхронизируем с Хабом
+            localStorage.setItem('skinwalker_games_roles', JSON.stringify(visRoles));
             document.getElementById(`toggle-${role}`).classList.toggle('active', visRoles[role]);
-            
-            // Если позже добавим цифры на карточки тир-листа, тут нужно будет вызывать перерисовку:
-            // loadTierList(); 
         }
-
-        // При загрузке страницы восстанавливаем нажатые кнопки из памяти
         window.addEventListener('DOMContentLoaded', () => {
             Object.keys(visRoles).forEach(role => {
                 const btn = document.getElementById(`toggle-${role}`);
@@ -398,13 +392,10 @@
             });
         });
 
-        const FIREBASE_DB_URL = "https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app/games_db.json";
+        // --- 3. ЗАГРУЗКА И ОТРИСОВКА ИГР ---
         let gamesData = {};
-
-        // Цвета для горизонтальных линий тиров
         const tierColors = { 'S': '255, 74, 74', 'A': '255, 215, 0', 'B': '203, 166, 247', 'C': '137, 180, 250', 'D': '166, 227, 161', 'F': '136, 136, 136' };
 
-        // --- 1. ЗАГРУЗКА И ОТРИСОВКА ---
         async function loadTierList() {
             try {
                 const res = await fetch(FIREBASE_DB_URL);
@@ -414,7 +405,6 @@
                 const backlog = document.querySelector('.backlog-container');
                 backlog.innerHTML = '<div class="backlog-title">Бэклог / Без оценки</div>';
 
-                // Красим горизонтальные линии под каждым тиром с отступом 100px
                 document.querySelectorAll('.tier-row').forEach(row => {
                     const tier = row.getAttribute('data-tier');
                     const rgb = tierColors[tier];
@@ -429,7 +419,6 @@
 
                 gamesArray.forEach(game => {
                     const tier = game.scores?.tier || 'UNRANKED';
-                    
                     const card = document.createElement('div');
                     card.className = 'tier-item';
                     card.draggable = true;
@@ -438,153 +427,81 @@
                     card.style.backgroundImage = `url('${game.coverUrl}')`;
                     card.setAttribute('data-cover', game.coverUrl); 
                     
-                    // Умный клик: переходим на страницу игры, только если это не перетаскивание
                     card.addEventListener('click', (e) => {
-                        if (window.isDraggingCard) {
-                            e.preventDefault();
-                            return; 
-                        }
+                        if (window.isDraggingCard) { e.preventDefault(); return; }
                         window.location.href = `games-page.html?id=${encodeURIComponent(game.id).replace(/'/g, "%27")}`;
                     });
                     
-                    // --- ДИНАМИЧЕСКИЙ ФОН И ПЕРЕКРАСКА (ХАМЕЛЕОН) ---
                     card.addEventListener('mouseenter', () => {
                         if (window.isDraggingCard) return; 
-                        
                         const bg = document.getElementById('dynamic-bg');
                         bg.style.backgroundImage = `url('${game.coverUrl}')`;
                         bg.classList.add('active');
-
                         if (card.dataset.rgb) {
                             const rgb = card.dataset.rgb;
                             document.documentElement.style.setProperty('--theme-primary', `rgb(${rgb})`);
                             document.documentElement.style.setProperty('--theme-glow', `rgba(${rgb}, 0.5)`);
                             document.documentElement.style.setProperty('--theme-panel-border', `rgba(${rgb}, 0.4)`);
-                            
-                            // Красим логотип
-                            document.documentElement.style.setProperty('--theme-logo', `rgb(${rgb})`);
-                            document.documentElement.style.setProperty('--theme-logo-glow', `rgba(${rgb}, 0.5)`);
                         }
                     });
                     
                     card.addEventListener('mouseleave', () => {
                         document.getElementById('dynamic-bg').classList.remove('active');
-                        
                         document.documentElement.style.removeProperty('--theme-primary');
                         document.documentElement.style.removeProperty('--theme-glow');
                         document.documentElement.style.removeProperty('--theme-panel-border');
-                        
-                        // Возвращаем логотипу родной цвет
-                        document.documentElement.style.removeProperty('--theme-logo');
-                        document.documentElement.style.removeProperty('--theme-logo-glow');
                     });
                     
-                    card.innerHTML = `
-                        <div class="front-overlay">
-                            <div class="game-title">${game.title}</div>
-                        </div>
-                    `;
+                    card.innerHTML = `<div class="front-overlay"><div class="game-title">${game.title}</div></div>`;
 
-                    if (tier === 'UNRANKED') {
-                        backlog.appendChild(card);
-                    } else {
+                    if (tier === 'UNRANKED') backlog.appendChild(card);
+                    else {
                         const targetRow = document.querySelector(`.tier-row[data-tier="${tier}"] .tier-content`);
                         if (targetRow) targetRow.appendChild(card);
                     }
                 });
-
                 extractCoverColors();
-
             } catch (e) { console.error("Ошибка загрузки базы:", e); }
         }
 
-        // Красим названия в цвета обложек + Умный обход блокировок (CORS Proxy)
         function extractCoverColors() {
             if (typeof ColorThief === 'undefined') return;
             const colorThief = new ColorThief();
-            
             document.querySelectorAll('.tier-item').forEach(card => {
                 const imgUrl = card.getAttribute('data-cover');
                 if (!imgUrl) return;
-
                 const processColor = (imgEl) => {
                     try {
                         const color = colorThief.getColor(imgEl);
                         let r = color[0], g = color[1], b = color[2];
                         const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
                         if (luminance < 90) { r = Math.min(255, r + 80); g = Math.min(255, g + 80); b = Math.min(255, b + 80); }
-                        
                         card.style.setProperty('--theme-light', `rgb(${r}, ${g}, ${b})`); 
                         card.dataset.rgb = `${r}, ${g}, ${b}`;
                     } catch(e) { applyFallback(); }
                 };
-                
-                const applyFallback = () => {
-                    card.style.setProperty('--theme-light', `rgb(166, 227, 161)`);
-                    card.dataset.rgb = `166, 227, 161`; 
-                };
-
-                const hiddenImg = new Image();
-                hiddenImg.crossOrigin = 'Anonymous';
-                
+                const applyFallback = () => { card.style.setProperty('--theme-light', `rgb(166, 227, 161)`); card.dataset.rgb = `166, 227, 161`; };
+                const hiddenImg = new Image(); hiddenImg.crossOrigin = 'Anonymous';
                 hiddenImg.onload = () => processColor(hiddenImg);
-                
-                // Пробуем обойти блокировку, если прямая ссылка не отдает цвет
                 hiddenImg.onerror = function() {
-                    const proxyImg = new Image(); 
-                    proxyImg.crossOrigin = 'Anonymous';
+                    const proxyImg = new Image(); proxyImg.crossOrigin = 'Anonymous';
                     proxyImg.onload = () => processColor(proxyImg);
                     proxyImg.onerror = function() {
-                        const proxyImg2 = new Image(); 
-                        proxyImg2.crossOrigin = 'Anonymous';
+                        const proxyImg2 = new Image(); proxyImg2.crossOrigin = 'Anonymous';
                         proxyImg2.onload = () => processColor(proxyImg2);
                         proxyImg2.onerror = applyFallback; 
                         proxyImg2.src = 'https://wsrv.nl/?url=' + encodeURIComponent(imgUrl);
                     };
                     proxyImg.src = 'https://corsproxy.io/?' + encodeURIComponent(imgUrl);
                 };
-                
                 hiddenImg.src = imgUrl + '?bypassCache=' + Date.now();
             });
         }
 
-        window.onload = () => {
-            checkTwitchAuth(); // Сначала проверяем Twitch и рисуем профиль
-            loadTierList();    // Параллельно грузим карточки тир-листа
-        };
-
-        // --- 2. МАССОВОЕ СОХРАНЕНИЕ ПОРЯДКА В БАЗУ ---
-        async function updateTierOrder() {
-            const updates = {};
-            document.querySelectorAll('.tier-row').forEach(row => {
-                const tier = row.getAttribute('data-tier');
-                row.querySelectorAll('.tier-item').forEach((card, index) => {
-                    updates[`${card.id}/scores/tier`] = tier;
-                    updates[`${card.id}/scores/position`] = index + 1;
-                });
-            });
-            document.querySelectorAll('.backlog-container .tier-item').forEach(card => {
-                updates[`${card.id}/scores/tier`] = 'UNRANKED';
-                updates[`${card.id}/scores/position`] = 0;
-            });
-
-            try {
-                await fetch(FIREBASE_DB_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
-                console.log("Порядок успешно сохранен в базу!");
-            } catch(e) { console.error("Ошибка сохранения:", e); }
-        }
-
-        // Глобальный флаг, который отличает клик от перетаскивания
-        window.isDraggingCard = false;
-
-        // --- 3. УМНАЯ ФИЗИКА ПЕРЕТАСКИВАНИЯ (ДЕЛЕГИРОВАНИЕ СОБЫТИЙ) ---
-        // Один слушатель на всю страницу вместо сотен на каждую карточку
-        document.addEventListener('dragstart', drag);
-        document.addEventListener('dragend', dragEnd);
-
-        // Глобальные переменные для логики вкладок
+        // --- 4. ВКЛАДКИ (СТРИМЕР / Я / ЧАТ) ---
         let currentTierTab = 'streamer';
-        let hasUnsavedChanges = false; // Флаг: были ли изменения
+        let hasUnsavedChanges = false;
+        let lastSaveTime = 0;
 
         function switchTierTab(tabName) {
             currentTierTab = tabName;
@@ -595,13 +512,60 @@
             if (saveBtn) saveBtn.style.display = (tabName === 'me') ? 'block' : 'none';
         }
 
+        function saveMyTierList() {
+            if (!hasUnsavedChanges) return;
+            const now = Date.now();
+            if (now - lastSaveTime < 15000) { alert("Подождите немного перед следующим сохранением!"); return; }
+            if (!currentUser) { alert("Пожалуйста, авторизуйтесь через Twitch!"); return; }
+            
+            const btn = document.getElementById('save-tier-btn');
+            btn.innerText = "Сохранение...";
+            btn.disabled = true;
+            lastSaveTime = now;
+            
+            // Временная имитация сохранения (позже привяжем базу)
+            setTimeout(() => { 
+                hasUnsavedChanges = false;
+                btn.innerText = "Сохранено"; 
+                btn.style.borderColor = "#555";
+                btn.style.color = "#555";
+            }, 1000);
+        }
+
+        // --- 5. ФИЗИКА ПЕРЕТАСКИВАНИЯ ---
+        window.isDraggingCard = false;
+        document.addEventListener('dragstart', drag);
+        document.addEventListener('dragend', dragEnd);
+
+        function drag(ev) {
+            // Проверяем, ты ли это зашел на сайт
+            const isStreamer = currentUser && currentUser.login.toLowerCase() === 'skinwalker_nozxc';
+
+            // ЖЕЛЕЗОБЕТОННАЯ ЛОГИКА:
+            if (currentTierTab === 'chat') { ev.preventDefault(); return; } // Во вкладке Чат никто не таскает
+            if (currentTierTab === 'streamer' && !isStreamer) { ev.preventDefault(); return; } // Во вкладке Стример таскаешь ТОЛЬКО ты
+
+            window.isDraggingCard = true; 
+            const card = ev.target.closest('.tier-item');
+            if (!card) return;
+            ev.dataTransfer.setData("text", card.id);
+            ev.dataTransfer.effectAllowed = "move";
+            setTimeout(() => { card.classList.add('dragging'); }, 0);
+        }
+
         function dragEnd(ev) {
             const card = ev.target.closest('.tier-item');
             if (card) card.classList.remove('dragging');
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             
-            // Если зритель передвинул карточку, активируем кнопку "Сохранить"
-            if (currentTierTab === 'me') {
+            const isStreamer = currentUser && currentUser.login.toLowerCase() === 'skinwalker_nozxc';
+            
+            // Если ты двигаешь карточки в своей вкладке - мгновенно сохраняем в главную базу!
+            if (currentTierTab === 'streamer' && isStreamer) {
+                updateTierOrder(); 
+            } 
+            // Если зритель (или ты) двигает в личной вкладке - зажигаем кнопку "Сохранить"
+            else if (currentTierTab === 'me') {
                 hasUnsavedChanges = true;
                 const btn = document.getElementById('save-tier-btn');
                 if (btn) {
@@ -611,74 +575,17 @@
                     btn.style.color = "#a6e3a1";
                 }
             }
-            
             setTimeout(() => { window.isDraggingCard = false; }, 100);
-        }
-
-        function saveMyTierList() {
-            if (!hasUnsavedChanges) return; // Если нечего сохранять - ничего не делаем
-            if (!currentUser) { alert("Пожалуйста, авторизуйтесь через Twitch!"); return; }
-            
-            const btn = document.getElementById('save-tier-btn');
-            btn.innerText = "Сохранение...";
-            btn.disabled = true;
-            
-            // Тут позже мы напишем сбор карточек и отправку в Firebase
-            
-            // Имитируем успешное сохранение:
-            setTimeout(() => { 
-                hasUnsavedChanges = false;
-                btn.innerText = "Сохранено"; 
-                btn.style.borderColor = "#555";
-                btn.style.color = "#555";
-            }, 1000);
-        }
-            
-            // Заглушка, тут будет логика сбора тиров
-            alert("Тир-лист сохраняется..."); 
-            
-            lastSaveTime = now;
-            const btn = document.getElementById('save-tier-btn');
-            btn.disabled = true;
-            btn.innerText = "Сохранено!";
-            setTimeout(() => { 
-                btn.disabled = false; 
-                btn.innerText = "Сохранить"; 
-            }, 15000);
-        }
-
-        // --- 3. УМНАЯ ФИЗИКА ПЕРЕТАСКИВАНИЯ (ДЕЛЕГИРОВАНИЕ) ---
-        document.addEventListener('dragstart', drag);
-        document.addEventListener('dragend', dragEnd);
-
-        function drag(ev) {
-            // БЛОКИРУЕМ ПЕРЕТАСКИВАНИЕ, ЕСЛИ МЫ НЕ ВО ВКЛАДКЕ "Я"
-            if (currentTierTab !== 'me') {
-                ev.preventDefault();
-                return;
-            }
-
-            window.isDraggingCard = true; 
-            const card = ev.target.closest('.tier-item');
-            if (!card) return;
-            
-            ev.dataTransfer.setData("text", card.id);
-            ev.dataTransfer.effectAllowed = "move";
-            setTimeout(() => { card.classList.add('dragging'); }, 0);
         }
 
         function allowDrop(ev) {
             ev.preventDefault();
             let dropzone = ev.target.closest('.tier-row, .backlog-container');
-            
             if (dropzone) {
                 dropzone.classList.add('drag-over');
                 let targetZone = dropzone.classList.contains('backlog-container') ? dropzone : dropzone.querySelector('.tier-content');
-                
-                // Передаем X и Y для расчета правильного места
                 const afterElement = getDragAfterElement(targetZone, ev.clientX, ev.clientY);
                 const draggable = document.querySelector('.dragging');
-                
                 if (draggable) {
                     if (afterElement == null) targetZone.appendChild(draggable);
                     else targetZone.insertBefore(draggable, afterElement);
@@ -688,21 +595,13 @@
 
         function getDragAfterElement(container, x, y) {
             const draggableElements = [...container.querySelectorAll('.tier-item:not(.dragging)')];
-            
             return draggableElements.reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
-                
-                // 1. Проверяем, на одной ли мы строке с карточкой по Y (даем запас 15px)
                 const inRow = y >= box.top - 15 && y <= box.bottom + 15;
                 if (!inRow) return closest; 
-                
-                // 2. Если мы на нужной строке, проверяем лево/право по X
                 const offset = x - (box.left + box.width / 2);
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
+                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                else return closest;
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
@@ -717,92 +616,75 @@
             if (dropRow) dropRow.classList.remove('drag-over');
         }
 
-        // --- ЛОГИКА ЗАЛА СЛАВЫ (ТОЛЬКО ИГРЫ - ЗАЩИЩЕННАЯ ВЕРСИЯ) ---
+        // --- 6. ЗАЛ СЛАВЫ ЗРИТЕЛЕЙ ---
         let lbAllUsers = [];
 
-        window.openLeaderboard = async function() {
-            try {
-                if (!window.globalCommData) {
-                    const btn = document.querySelector('button[onclick="window.openLeaderboard()"]');
-                    const oldText = btn ? btn.innerText : 'Зрители';
-                    if (btn) btn.innerText = "Загрузка...";
-                    
-                    const gamesCommRes = await fetch(`${FIREBASE_BASE}/games_community_db.json`);
-                    window.globalCommData = await gamesCommRes.json() || {};
-                    
-                    if (btn) btn.innerText = oldText;
-                }
+        async function openLeaderboard() {
+            const btn = document.querySelector('button[onclick="openLeaderboard()"]');
+            const oldText = btn ? btn.innerText : 'Зрители';
+            if (btn) btn.innerText = "Загрузка...";
+            
+            let commDataToUse = window.globalCommData;
+            if (!commDataToUse) {
+                try {
+                    const res = await fetch(`${FIREBASE_BASE}/games_community_db.json`);
+                    commDataToUse = await res.json() || {};
+                    window.globalCommData = commDataToUse; 
+                } catch(e) { console.error(e); }
+            }
+            if (btn) btn.innerText = oldText;
 
-                const userStats = {};
-                
-                if (window.globalCommData && typeof window.globalCommData === 'object') {
-                    for (const [gameId, gameData] of Object.entries(window.globalCommData)) {
-                        if (gameData && gameData.ratings && typeof gameData.ratings === 'object') { 
-                            for (const [userId, rating] of Object.entries(gameData.ratings)) {
-                                if (!rating) continue; 
-
-                                if ((Number(rating.overall) > 0) || (rating.theory && Object.values(rating.theory).some(v => Number(v) > 0))) {
-                                    if (!userStats[userId]) {
-                                        userStats[userId] = { 
-                                            id: userId, 
-                                            name: rating.displayName || userId, 
-                                            avatar: rating.profileImage || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/41780b5a-def8-11e9-94d9-784f43822e80-profile_image-70x70.png', 
-                                            count: 0 
-                                        };
-                                    }
-                                    userStats[userId].count++;
-                                    if (rating.displayName) userStats[userId].name = rating.displayName;
-                                    if (rating.profileImage) userStats[userId].avatar = rating.profileImage;
+            const userStats = {};
+            if (commDataToUse && typeof commDataToUse === 'object') {
+                for (const [gameId, gameData] of Object.entries(commDataToUse)) {
+                    if (gameData && gameData.ratings && typeof gameData.ratings === 'object') {
+                        for (const [userId, rating] of Object.entries(gameData.ratings)) {
+                            if (!rating) continue;
+                            const ov = Number(rating.overall) || 0;
+                            let hasTheory = false;
+                            if (rating.theory && typeof rating.theory === 'object') {
+                                hasTheory = Object.values(rating.theory).some(v => Number(v) > 0);
+                            }
+                            if (ov > 0 || hasTheory || rating.tier) {
+                                if (!userStats[userId]) { 
+                                    userStats[userId] = { id: userId, name: rating.displayName || userId, avatar: rating.profileImage || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/41780b5a-def8-11e9-94d9-784f43822e80-profile_image-70x70.png', count: 0 }; 
                                 }
+                                userStats[userId].count++;
+                                if (rating.displayName) userStats[userId].name = rating.displayName;
+                                if (rating.profileImage) userStats[userId].avatar = rating.profileImage;
                             }
                         }
                     }
                 }
-                
-                lbAllUsers = Object.values(userStats).sort((a, b) => b.count - a.count);
-                
-                const searchInput = document.getElementById('lb-search');
-                if (searchInput) searchInput.value = '';
-                
-                window.renderLeaderboard(lbAllUsers);
-                
-                const modal = document.getElementById('leaderboard-modal');
-                if (modal) modal.style.display = 'flex';
-                
-            } catch(e) {
-                console.error("Ошибка при сборке Зала Славы:", e);
-                alert("Ошибка сборки зрителей: " + e.message);
             }
-        };
+            lbAllUsers = Object.values(userStats).sort((a, b) => b.count - a.count);
+            const searchInput = document.getElementById('lb-search');
+            if (searchInput) searchInput.value = '';
+            renderLeaderboard(lbAllUsers);
+            const modal = document.getElementById('leaderboard-modal');
+            if (modal) modal.style.display = 'flex';
+        }
 
-        window.renderLeaderboard = function(usersArray) {
+        function renderLeaderboard(usersArray) {
             const listEl = document.getElementById('leaderboard-list');
             if (!listEl) return;
-            
             listEl.innerHTML = '';
             if (usersArray.length === 0) {
                 listEl.innerHTML = '<div style="text-align: center; color: #6b7a62; padding: 30px; font-size: 18px;">Никого не найдено.</div>'; 
                 return;
             }
-            
             usersArray.forEach((u) => {
                 const originalIndex = lbAllUsers.findIndex(orig => orig.id === u.id);
                 const rank = originalIndex + 1;
-                
                 let rankClass = ''; let crown = rank;
                 if (rank === 1) { rankClass = 'top-1'; crown = '👑'; }
                 else if (rank === 2) { rankClass = 'top-2'; crown = '🥈'; }
                 else if (rank === 3) { rankClass = 'top-3'; crown = '🥉'; }
-
                 const safeName = (u.name || '').toString().toLowerCase();
                 const dbUser = window.globalUsersDB ? window.globalUsersDB[safeName] : null;
-                
                 const color = (dbUser && dbUser.color) ? dbUser.color : '#a4b09c';
                 const isOnline = dbUser && dbUser.last_online && (Date.now() - dbUser.last_online < 150000);
-                const statusDot = isOnline 
-                    ? '<div class="status-dot status-online" style="display:inline-block; margin-right:6px;"></div><span style="color:#a6e3a1; font-size:13px; font-family:sans-serif;">В сети</span>' 
-                    : '<div class="status-dot status-offline" style="display:inline-block; margin-right:6px;"></div><span style="color:#6b7a62; font-size:13px; font-family:sans-serif;">Не в сети</span>';
-
+                const statusDot = isOnline ? '<div class="status-dot status-online" style="display:inline-block; margin-right:6px;"></div><span style="color:#a6e3a1; font-size:13px; font-family:sans-serif;">В сети</span>' : '<div class="status-dot status-offline" style="display:inline-block; margin-right:6px;"></div><span style="color:#6b7a62; font-size:13px; font-family:sans-serif;">Не в сети</span>';
                 const html = `
                 <a href="profile.html?user=${u.id}" class="lb-item">
                     <div class="lb-rank ${rankClass}">${crown}</div>
@@ -820,15 +702,21 @@
                 </a>`;
                 listEl.insertAdjacentHTML('beforeend', html);
             });
-        };
+        }
 
-        window.filterLeaderboard = function() {
+        function filterLeaderboard() {
             const searchInput = document.getElementById('lb-search');
             if (!searchInput) return;
             const query = searchInput.value.toLowerCase().trim();
-            if (!query) { window.renderLeaderboard(lbAllUsers); return; }
+            if (!query) { renderLeaderboard(lbAllUsers); return; }
             const filtered = lbAllUsers.filter(u => (u.name || '').toString().toLowerCase().includes(query));
-            window.renderLeaderboard(filtered);
+            renderLeaderboard(filtered);
+        }
+
+        // --- 7. ГЛАВНЫЙ ЗАПУСК (ИЗ-ЗА НЕГО ВСЕ И СЛОМАЛОСЬ) ---
+        window.onload = () => {
+            checkTwitchAuth(); 
+            loadTierList();    
         };
     </script>
 </body>
