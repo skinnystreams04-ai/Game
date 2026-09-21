@@ -8,6 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <style>
+
+        /* ВЫПАДАЮЩЕЕ МЕНЮ ВИЗУАЛА */
+        .visual-dropdown { position: relative; display: inline-block; }
+        .visual-dropdown-content { display: none; position: absolute; left: 50%; transform: translateX(-50%); top: 100%; margin-top: 15px; background: rgba(14, 17, 13, 0.95); border: 1px solid var(--theme-panel-border, #283325); border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 2000; min-width: 150px; backdrop-filter: blur(10px); flex-direction: column; gap: 15px; }
+        .visual-dropdown.show .visual-dropdown-content { display: flex; }
+        .role-toggles { display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 0; }
+        .role-toggle-btn { background: transparent; border: none; border-bottom: 2px solid rgba(107, 122, 98, 0.3); color: #6b7a62; padding: 4px 2px; font-family: inherit; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; outline: none; }
+        .role-toggle-btn:hover { color: #c4d1b8; border-bottom-color: rgba(196, 209, 184, 0.5); }
+        .role-toggle-btn.active.streamer { color: #cba6f7; border-bottom-color: #cba6f7; text-shadow: 0 0 8px rgba(203, 166, 247, 0.6); }
+        .role-toggle-btn.active.me { color: #a6e3a1; border-bottom-color: #a6e3a1; text-shadow: 0 0 8px rgba(166, 227, 161, 0.6); }
+        .role-toggle-btn.active.chat { color: #b8a87b; border-bottom-color: #b8a87b; text-shadow: 0 0 8px rgba(184, 168, 123, 0.6); }
+
         /* ГЛОБАЛЬНЫЕ ЦВЕТА */
         :root {
             --theme-primary: #a6e3a1;
@@ -133,16 +145,28 @@
                 </div>
             </div>
             
-            <!-- ЛОКАЛЬНОЕ МЕНЮ ИГР (Без Визуала) -->
+            <!-- ЛОКАЛЬНОЕ МЕНЮ ИГР -->
             <div style="display: flex; gap: 25px; align-items: center;">
-                <a href="games-tierlist.html" class="nav-btn active" style="color: #ff4a4a; text-shadow: 0 0 8px rgba(255,74,74,0.5); --btn-color: #ff4a4a;">Тир-лист</a>
                 <a href="index.html" class="nav-btn btn-hub">Хаб</a>
+                <a href="games-tierlist.html" class="nav-btn active" style="color: #ff4a4a; text-shadow: 0 0 8px rgba(255,74,74,0.5); --btn-color: #ff4a4a;">Тир-лист</a>
                 <button onclick="openLeaderboard()" class="nav-btn" style="--btn-color: #89b4fa;">Зрители</button>
+                
+                <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВИЗУАЛА -->
+                <div class="visual-dropdown" id="visual-dropdown">
+                    <button class="nav-btn btn-visual" onclick="toggleVisualMenu()">Визуал</button>
+                    <div class="visual-dropdown-content">
+                        <div class="role-toggles">
+                            <button id="toggle-streamer" class="role-toggle-btn active streamer" onclick="toggleRoleVis('streamer')">Стример</button>
+                            <button id="toggle-me" class="role-toggle-btn active me" onclick="toggleRoleVis('me')">Я</button>
+                            <button id="toggle-chat" class="role-toggle-btn active chat" onclick="toggleRoleVis('chat')">Чат</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
         <!-- ПРАВАЯ ЧАСТЬ (АВТОРИЗАЦИЯ) -->
-        <div class="nav-auth" id="nav-auth">
+        <div class="nav-auth" id="nav-auth" style="margin-left: auto;">
             <button class="twitch-btn" onclick="loginTwitch()">Войти через Twitch</button>
         </div>
     </nav>
@@ -285,6 +309,36 @@
                 }
             } catch (e) { console.error('Ошибка авторизации', e); }
         }
+
+        // --- ЛОГИКА МЕНЮ ВИЗУАЛА ---
+        let visRoles = JSON.parse(localStorage.getItem('skinwalker_games_roles')) || { streamer: true, me: true, chat: true };
+
+        function toggleVisualMenu() { 
+            document.getElementById('visual-dropdown').classList.toggle('show'); 
+        }
+        
+        window.addEventListener('click', function(e) {
+            if (!document.getElementById('visual-dropdown').contains(e.target)) {
+                document.getElementById('visual-dropdown').classList.remove('show');
+            }
+        });
+
+        function toggleRoleVis(role) {
+            visRoles[role] = !visRoles[role];
+            localStorage.setItem('skinwalker_games_roles', JSON.stringify(visRoles)); // Синхронизируем с Хабом
+            document.getElementById(`toggle-${role}`).classList.toggle('active', visRoles[role]);
+            
+            // Если позже добавим цифры на карточки тир-листа, тут нужно будет вызывать перерисовку:
+            // loadTierList(); 
+        }
+
+        // При загрузке страницы восстанавливаем нажатые кнопки из памяти
+        window.addEventListener('DOMContentLoaded', () => {
+            Object.keys(visRoles).forEach(role => {
+                const btn = document.getElementById(`toggle-${role}`);
+                if (btn) btn.classList.toggle('active', visRoles[role]);
+            });
+        });
 
         const FIREBASE_DB_URL = "https://skinwalkerauction-default-rtdb.europe-west1.firebasedatabase.app/games_db.json";
         let gamesData = {};
