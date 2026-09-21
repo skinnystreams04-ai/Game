@@ -414,11 +414,9 @@
                     }
                 });
 
+                // Создаем карточки ОДИН раз и скидываем в бэклог. Потом функция renderBoardState расставит их по местам!
                 const gamesArray = Object.entries(gamesData).map(([id, data]) => ({ id, ...data }));
-                gamesArray.sort((a, b) => (a.scores?.position || 999) - (b.scores?.position || 999));
-
                 gamesArray.forEach(game => {
-                    const tier = game.scores?.tier || 'UNRANKED';
                     const card = document.createElement('div');
                     card.className = 'tier-item';
                     card.draggable = true;
@@ -434,9 +432,8 @@
                     
                     card.addEventListener('mouseenter', () => {
                         if (window.isDraggingCard) return; 
-                        const bg = document.getElementById('dynamic-bg');
-                        bg.style.backgroundImage = `url('${game.coverUrl}')`;
-                        bg.classList.add('active');
+                        document.getElementById('dynamic-bg').style.backgroundImage = `url('${game.coverUrl}')`;
+                        document.getElementById('dynamic-bg').classList.add('active');
                         if (card.dataset.rgb) {
                             const rgb = card.dataset.rgb;
                             document.documentElement.style.setProperty('--theme-primary', `rgb(${rgb})`);
@@ -453,17 +450,15 @@
                     });
                     
                     card.innerHTML = `<div class="front-overlay"><div class="game-title">${game.title}</div></div>`;
-
-                    if (tier === 'UNRANKED') backlog.appendChild(card);
-                    else {
-                        const targetRow = document.querySelector(`.tier-row[data-tier="${tier}"] .tier-content`);
-                        if (targetRow) targetRow.appendChild(card);
-                    }
+                    backlog.appendChild(card);
                 });
+                
                 extractCoverColors();
+                renderBoardState(); // Запускаем перестановку
             } catch (e) { console.error("Ошибка загрузки базы:", e); }
         }
 
+        // --- Функция извлечения цветов (осталась без изменений) ---
         function extractCoverColors() {
             if (typeof ColorThief === 'undefined') return;
             const colorThief = new ColorThief();
@@ -476,8 +471,7 @@
                         let r = color[0], g = color[1], b = color[2];
                         const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
                         if (luminance < 90) { r = Math.min(255, r + 80); g = Math.min(255, g + 80); b = Math.min(255, b + 80); }
-                        card.style.setProperty('--theme-light', `rgb(${r}, ${g}, ${b})`); 
-                        card.dataset.rgb = `${r}, ${g}, ${b}`;
+                        card.style.setProperty('--theme-light', `rgb(${r}, ${g}, ${b})`); card.dataset.rgb = `${r}, ${g}, ${b}`;
                     } catch(e) { applyFallback(); }
                 };
                 const applyFallback = () => { card.style.setProperty('--theme-light', `rgb(166, 227, 161)`); card.dataset.rgb = `166, 227, 161`; };
@@ -486,50 +480,126 @@
                 hiddenImg.onerror = function() {
                     const proxyImg = new Image(); proxyImg.crossOrigin = 'Anonymous';
                     proxyImg.onload = () => processColor(proxyImg);
-                    proxyImg.onerror = function() {
-                        const proxyImg2 = new Image(); proxyImg2.crossOrigin = 'Anonymous';
-                        proxyImg2.onload = () => processColor(proxyImg2);
-                        proxyImg2.onerror = applyFallback; 
-                        proxyImg2.src = 'https://wsrv.nl/?url=' + encodeURIComponent(imgUrl);
-                    };
+                    proxyImg.onerror = function() { const proxyImg2 = new Image(); proxyImg2.crossOrigin = 'Anonymous'; proxyImg2.onload = () => processColor(proxyImg2); proxyImg2.onerror = applyFallback; proxyImg2.src = 'https://wsrv.nl/?url=' + encodeURIComponent(imgUrl); };
                     proxyImg.src = 'https://corsproxy.io/?' + encodeURIComponent(imgUrl);
                 };
                 hiddenImg.src = imgUrl + '?bypassCache=' + Date.now();
             });
         }
 
-        // --- 4. ВКЛАДКИ (СТРИМЕР / Я / ЧАТ) ---
+        // --- 4. ВКЛАДКИ И ЛОГИКА ПЕРЕСТРОЕНИЯ ДОСКИ ---
         let currentTierTab = 'streamer';
         let hasUnsavedChanges = false;
         let lastSaveTime = 0;
 
-        function switchTierTab(tabName) {
+        async function switchTierTab(tabName) {
+            if (tabName === 'me' && !currentUser) { alert('Сначала авторизуйтесь через Twitch!'); return; }
             currentTierTab = tabName;
+            
             document.querySelectorAll('.tier-tab').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
             const saveBtn = document.getElementById('save-tier-btn');
             if (saveBtn) saveBtn.style.display = (tabName === 'me') ? 'block' : 'none';
+
+            // Подгружаем базу зрителей, если мы перешли в "Я" или "Чат" и базы еще нет
+            if ((tabName === 'me' || tabName === 'chat') && !window.globalCommData) {
+                document.getElementById(`tab-${tabName}`).innerText = "...";
+                const res = await fetch(`${FIREBASE_BASE}/games_community_db.json`);
+                window.globalCommData = await res.json() || {};
+                document.getElementById(`tab-${tabName}`).innerText = tabName === 'me' ? 'Я' : 'Чат';
+            }
+            
+            renderBoardState(); // Переставляем карточки!
         }
 
-        function saveMyTierList() {
+        // Главная функция: двигает карточки по экрану в зависимости от выбранной вкладки
+        function renderBoardState() {
+            const backlog = document.querySelector('.backlog-container');
+            const gamesArray = Object.entries(gamesData).map(([id, data]) => ({ id, ...data }));
+
+            gamesArray.forEach(game => {
+                let tier = 'UNRANKED'; let position = 999;
+
+                if (currentTierTab === 'streamer') {
+                    tier = game.scores?.tier || 'UNRANKED';
+                    position = game.scores?.position || 999;
+                } else if (currentTierTab === 'me') {
+                    if (currentUser && window.globalCommData && window.globalCommData[game.id]?.ratings?.[currentUser.id]) {
+                        const myData = window.globalCommData[game.id].ratings[currentUser.id];
+                        tier = myData.tier || 'UNRANKED';
+                        position = myData.position || 999;
+                    }
+                } else if (currentTierTab === 'chat') {
+                    // Пока для чата все скидываем в бэклог (сделаем логику среднего балла позже)
+                    tier = 'UNRANKED';
+                }
+
+                game._tempTier = tier; game._tempPos = position;
+            });
+
+            gamesArray.sort((a, b) => a._tempPos - b._tempPos);
+
+            // Физически перемещаем карточки в нужные ряды
+            gamesArray.forEach(game => {
+                const card = document.getElementById(game.id);
+                if (!card) return;
+                if (game._tempTier === 'UNRANKED') backlog.appendChild(card);
+                else {
+                    const row = document.querySelector(`.tier-row[data-tier="${game._tempTier}"] .tier-content`);
+                    if (row) row.appendChild(card);
+                }
+            });
+        }
+
+        async function saveMyTierList() {
             if (!hasUnsavedChanges) return;
             const now = Date.now();
-            if (now - lastSaveTime < 15000) { alert("Подождите немного перед следующим сохранением!"); return; }
-            if (!currentUser) { alert("Пожалуйста, авторизуйтесь через Twitch!"); return; }
+            if (now - lastSaveTime < 15000) { alert("Подождите немного (анти-спам)!"); return; }
+            if (!currentUser) return;
             
             const btn = document.getElementById('save-tier-btn');
-            btn.innerText = "Сохранение...";
-            btn.disabled = true;
+            btn.innerText = "СОХРАНЕНИЕ..."; btn.disabled = true;
             lastSaveTime = now;
             
-            // Временная имитация сохранения (позже привяжем базу)
-            setTimeout(() => { 
+            // Собираем позиции всех карточек
+            const updates = {};
+            document.querySelectorAll('.tier-row').forEach(row => {
+                const tier = row.getAttribute('data-tier');
+                row.querySelectorAll('.tier-item').forEach((card, index) => {
+                    updates[`${card.id}/ratings/${currentUser.id}/tier`] = tier;
+                    updates[`${card.id}/ratings/${currentUser.id}/position`] = index + 1;
+                    updates[`${card.id}/ratings/${currentUser.id}/displayName`] = currentUser.display_name;
+                    updates[`${card.id}/ratings/${currentUser.id}/profileImage`] = currentUser.profile_image_url;
+                });
+            });
+            document.querySelectorAll('.backlog-container .tier-item').forEach((card, index) => {
+                updates[`${card.id}/ratings/${currentUser.id}/tier`] = 'UNRANKED';
+                updates[`${card.id}/ratings/${currentUser.id}/position`] = index + 1;
+                updates[`${card.id}/ratings/${currentUser.id}/displayName`] = currentUser.display_name;
+                updates[`${card.id}/ratings/${currentUser.id}/profileImage`] = currentUser.profile_image_url;
+            });
+
+            // Отправляем в Firebase (games_community_db)
+            try {
+                await fetch(`${FIREBASE_BASE}/games_community_db.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
+                
+                // Обновляем локальную память, чтобы доска не сбросилась
+                if (!window.globalCommData) window.globalCommData = {};
+                for (let key in updates) {
+                    const parts = key.split('/'); const gameId = parts[0], field = parts[3];
+                    if (!window.globalCommData[gameId]) window.globalCommData[gameId] = { ratings: {} };
+                    if (!window.globalCommData[gameId].ratings) window.globalCommData[gameId].ratings = {};
+                    if (!window.globalCommData[gameId].ratings[currentUser.id]) window.globalCommData[gameId].ratings[currentUser.id] = {};
+                    window.globalCommData[gameId].ratings[currentUser.id][field] = updates[key];
+                }
+
                 hasUnsavedChanges = false;
-                btn.innerText = "Сохранено"; 
-                btn.style.borderColor = "#555";
-                btn.style.color = "#555";
-            }, 1000);
+                btn.innerText = "СОХРАНЕНО"; btn.style.borderColor = "#555"; btn.style.color = "#555";
+            } catch(e) {
+                alert("Ошибка сохранения: " + e.message);
+                btn.innerText = "ОШИБКА";
+            }
         }
 
         // --- 5. ФИЗИКА ПЕРЕТАСКИВАНИЯ ---
