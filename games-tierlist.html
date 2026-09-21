@@ -17,6 +17,20 @@
 
         body { margin: 0; font-family: 'Neucha', cursive; background: #0b0d0a; color: #a4b09c; min-height: 100vh; padding-bottom: 50px; }
 
+        /* ГЛОБАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ САЙТОВ (ЛОГОТИП) */
+        .logo-dropdown { position: relative; display: inline-block; padding: 5px 0; }
+        .nav-logo-wrap { display: flex; align-items: center; gap: 8px; color: var(--theme-primary, #a6e3a1); font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--theme-glow, rgba(166, 227, 161, 0.5)); cursor: pointer; transition: 0.3s; font-family: 'Neucha', cursive; }
+        .nav-logo-wrap:hover { filter: brightness(1.2); }
+        .logo-arrow { font-size: 14px; opacity: 0.7; transition: transform 0.3s; }
+        .logo-dropdown:hover .logo-arrow { transform: rotate(180deg); }
+        
+        .logo-dropdown-content { display: none; position: absolute; left: 0; top: 100%; margin-top: -5px; background: rgba(14, 17, 13, 0.95); border: 1px solid var(--theme-panel-border, #283325); border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 2000; min-width: 200px; backdrop-filter: blur(10px); flex-direction: column; gap: 5px; }
+        .logo-dropdown:hover .logo-dropdown-content { display: flex; }
+        
+        .logo-link { color: #a4b09c; text-decoration: none; font-family: 'Neucha', cursive; font-size: 18px; font-weight: bold; text-transform: uppercase; padding: 10px 15px; border-radius: 8px; transition: 0.3s; text-align: left; display: flex; align-items: center; gap: 10px; border: 1px solid transparent; }
+        .logo-link:hover { background: rgba(0,0,0,0.4); color: var(--site-color); text-shadow: 0 0 10px var(--site-color); border-color: var(--site-color); }
+        .logo-link.active { color: var(--site-color); background: rgba(0,0,0,0.3); border-left: 3px solid var(--site-color); border-radius: 4px 8px 8px 4px; }
+
         /* ШАПКА */
         .top-nav { background: #0b0d0a; border-bottom: 2px solid var(--theme-panel-border); padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); position: relative; z-index: 1000; transition: border-color 0.5s ease; }
         
@@ -129,14 +143,25 @@
 <body>
 
     <nav class="top-nav">
-        <!-- ЛЕВАЯ ЧАСТЬ (ПРАВИЛЬНЫЙ ПОРЯДОК КНОПОК) -->
+        <!-- ЛЕВАЯ ЧАСТЬ (ПЕРЕКЛЮЧАТЕЛЬ САЙТОВ И КНОПКИ) -->
         <div style="display: flex; align-items: center; gap: 40px;">
-            <a href="index.html" class="nav-logo">Skinwalker Игры</a>
+            
+            <!-- ГЛОБАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ САЙТОВ -->
+            <div class="logo-dropdown">
+                <div class="nav-logo-wrap">Skinwalker Игры <span class="logo-arrow">▼</span></div>
+                <div class="logo-dropdown-content">
+                    <a href="https://skinnystreams04-ai.github.io/Anime/index.html" class="logo-link" style="--site-color: #a6e3a1;">
+                        <span style="font-size: 14px;">▶</span> Аниме
+                    </a>
+                    <a href="index.html" class="logo-link active" style="--site-color: #ffd700;">
+                        <span style="font-size: 14px;">▶</span> Игры
+                    </a>
+                </div>
+            </div>
             
             <div style="display: flex; gap: 20px; align-items: center;">
                 <a href="index.html" class="nav-btn btn-hub">Хаб</a>
                 <a href="games-tierlist.html" class="nav-btn active" style="color: #ff4a4a; text-shadow: 0 0 8px rgba(255,74,74,0.5); --btn-color: #ff4a4a;">Тир-лист</a>
-                
                 <button onclick="openLeaderboard()" class="nav-btn" style="--btn-color: #89b4fa;">Зрители</button>
                 
                 <div class="visual-dropdown" id="visual-dropdown">
