@@ -487,25 +487,30 @@
             <div class="input-group" style="margin-top: 25px;">
                 <span class="input-label" style="justify-content: center; color: #c4d1b8; margin-bottom: 10px;">Выберите Вайб (Эмоцию)</span>
                 <div class="vibe-selector">
-                    <!-- Гнев -->
+                    <!-- Гнев (Злое лицо) -->
                     <div class="vibe-option" style="color: #ff4a4a;" onclick="selectVibe('rage')" id="vibe-opt-rage">
-                        <svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c-2.28 0-3-4.5-3-4.5s.53 1.15 1.5 2.21c1.88-2.61 2.37-6.52 2.37-6.52a8.5 8.5 0 11-5.32 14.49z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0 -18a9 9 0 0 1 0 18z" /><path d="M8 9l2 1" /><path d="M16 9l-2 1" /><path d="M14.5 16.05a3.5 3.5 0 0 0 -5 0" /></svg>
                         <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Гнев</span>
                     </div>
-                    <!-- Шедевр -->
-                    <div class="vibe-option" style="color: #ffd700;" onclick="selectVibe('masterpiece')" id="vibe-opt-masterpiece">
-                        <svg viewBox="0 0 24 24"><path d="M2 4l3 7h14l3-7-6 5-4-7-4 7zM3 14h18v4H3z"/></svg>
-                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Шедевр</span>
+                    <!-- Кал (Какашка) -->
+                    <div class="vibe-option" style="color: #d98a59;" onclick="selectVibe('poop')" id="vibe-opt-poop">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10a4 4 0 1 1 8 0c0 1.5 -1.5 2 -1.5 2c1.5 0 2.5 1 2.5 2.5c0 1.5 -1.5 2.5 -2.5 2.5c1.5 1 1.5 3 -1.5 3h-6c-3 0 -3 -2 -1.5 -3c-1 0 -2.5 -1 -2.5 -2.5c0 -1.5 1 -2.5 2.5 -2.5c0 0 -1.5 -.5 -1.5 -2z" /><path d="M10 14h.01M14 14h.01" /><path d="M10 18a3.5 3.5 0 0 0 4 0" /></svg>
+                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Кал</span>
                     </div>
-                    <!-- Духота -->
+                    <!-- Клоун (Мем) -->
+                    <div class="vibe-option" style="color: #cba6f7;" onclick="selectVibe('meme')" id="vibe-opt-meme">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9 9h.01M15 9h.01" /><circle cx="12" cy="13" r="2" fill="currentColor" /><path d="M9 17c1 1 2 1 3 1s2 0 3-1" /><path d="M5 8c-1.5-1.5-1-4 1-4s3 1.5 3 2" /><path d="M19 8c1.5-1.5 1-4-1-4s-3 1.5-3 2" /></svg>
+                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Клоун</span>
+                    </div>
+                    <!-- Духота (Череп) -->
                     <div class="vibe-option" style="color: #a6e3a1;" onclick="selectVibe('toxic')" id="vibe-opt-toxic">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C8.69 2 6 4.69 6 8c0 2.21.94 4.19 2.5 5.5V17h7v-3.5c1.56-1.31 2.5-3.29 2.5-5.5 0-3.31-2.69-6-6-6zm-1 7H9V9h2v2zm4 0h-2V9h2v2z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c4.418 0 8 3.358 8 7.5c0 1.901 -.755 3.637 -2 4.96l0 2.54a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1v-2.54c-1.245 -1.323 -2 -3.059 -2 -4.96c0 -4.142 3.582 -7.5 8 -7.5z" /><path d="M10 17v3M14 17v3M9 11h.01M15 11h.01" /></svg>
                         <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Духота</span>
                     </div>
-                    <!-- Мем -->
-                    <div class="vibe-option" style="color: #cba6f7;" onclick="selectVibe('meme')" id="vibe-opt-meme">
-                        <svg viewBox="0 0 24 24"><path d="M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20zm0 14c-2.33 0-4.32-1.45-5.12-3.5h10.24c-.8 2.05-2.79 3.5-5.12 3.5z"/></svg>
-                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Мем</span>
+                    <!-- База (Очки) -->
+                    <div class="vibe-option" style="color: #ffd700;" onclick="selectVibe('masterpiece')" id="vibe-opt-masterpiece">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 10v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" /><path d="M15 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14h2" /></svg>
+                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">База</span>
                     </div>
                 </div>
             </div>
@@ -531,10 +536,11 @@
         let selectedVibe = 'rage';
 
         const VIBES = {
-            'rage': { color: '#ff4a4a', svg: '<svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c-2.28 0-3-4.5-3-4.5s.53 1.15 1.5 2.21c1.88-2.61 2.37-6.52 2.37-6.52a8.5 8.5 0 11-5.32 14.49z"/></svg>' },
-            'masterpiece': { color: '#ffd700', svg: '<svg viewBox="0 0 24 24"><path d="M2 4l3 7h14l3-7-6 5-4-7-4 7zM3 14h18v4H3z"/></svg>' },
-            'toxic': { color: '#a6e3a1', svg: '<svg viewBox="0 0 24 24"><path d="M12 2C8.69 2 6 4.69 6 8c0 2.21.94 4.19 2.5 5.5V17h7v-3.5c1.56-1.31 2.5-3.29 2.5-5.5 0-3.31-2.69-6-6-6zm-1 7H9V9h2v2zm4 0h-2V9h2v2z"/></svg>' },
-            'meme': { color: '#cba6f7', svg: '<svg viewBox="0 0 24 24"><path d="M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20zm0 14c-2.33 0-4.32-1.45-5.12-3.5h10.24c-.8 2.05-2.79 3.5-5.12 3.5z"/></svg>' }
+            'rage': { color: '#ff4a4a', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0 -18a9 9 0 0 1 0 18z" /><path d="M8 9l2 1" /><path d="M16 9l-2 1" /><path d="M14.5 16.05a3.5 3.5 0 0 0 -5 0" /></svg>' },
+            'poop': { color: '#d98a59', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10a4 4 0 1 1 8 0c0 1.5 -1.5 2 -1.5 2c1.5 0 2.5 1 2.5 2.5c0 1.5 -1.5 2.5 -2.5 2.5c1.5 1 1.5 3 -1.5 3h-6c-3 0 -3 -2 -1.5 -3c-1 0 -2.5 -1 -2.5 -2.5c0 -1.5 1 -2.5 2.5 -2.5c0 0 -1.5 -.5 -1.5 -2z" /><path d="M10 14h.01M14 14h.01" /><path d="M10 18a3.5 3.5 0 0 0 4 0" /></svg>' },
+            'meme': { color: '#cba6f7', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9 9h.01M15 9h.01" /><circle cx="12" cy="13" r="2" fill="currentColor" /><path d="M9 17c1 1 2 1 3 1s2 0 3-1" /><path d="M5 8c-1.5-1.5-1-4 1-4s3 1.5 3 2" /><path d="M19 8c1.5-1.5 1-4-1-4s-3 1.5-3 2" /></svg>' },
+            'toxic': { color: '#a6e3a1', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c4.418 0 8 3.358 8 7.5c0 1.901 -.755 3.637 -2 4.96l0 2.54a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1v-2.54c-1.245 -1.323 -2 -3.059 -2 -4.96c0 -4.142 3.582 -7.5 8 -7.5z" /><path d="M10 17v3M14 17v3M9 11h.01M15 11h.01" /></svg>' },
+            'masterpiece': { color: '#ffd700', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 10v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" /><path d="M15 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14h2" /></svg>' }
         };
 
         const radarColors = [
