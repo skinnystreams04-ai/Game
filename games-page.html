@@ -229,29 +229,6 @@
         .status-online { background: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; }
         .status-offline { background: #555; }
 
-         /* --- ВЕРДИКТ ЧАТА (БЕЙДЖИ) --- */
-    .badges-container { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; }
-    .badge-slot { display: flex; align-items: center; justify-content: space-between; background: rgba(14, 17, 13, 0.6); border: 1px solid var(--theme-panel-border); border-radius: 8px; padding: 6px 10px; cursor: pointer; transition: 0.3s; backdrop-filter: blur(5px); min-height: 44px; position: relative; overflow: hidden; }
-    .badge-slot:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); filter: brightness(1.2); }
-    .badge-empty { border: 1px dashed #4a5c41; justify-content: center; opacity: 0.7; }
-    .badge-empty:hover { opacity: 1; border-color: var(--theme-primary); background: rgba(166, 227, 161, 0.05); }
-    .badge-empty-text { font-size: 14px; color: #829c73; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
-    
-    .badge-content { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-    .badge-avatar { width: 30px; height: 30px; border-radius: 4px; object-fit: cover; border: 1px solid; flex-shrink: 0; background: #000; }
-    .badge-icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .badge-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 5px currentColor); }
-    .badge-text { font-size: 15px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; text-shadow: 1px 1px 2px #000; }
-    .badge-price { display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 4px; font-size: 14px; font-weight: bold; font-family: sans-serif; flex-shrink: 0; }
-    .badge-price img { width: 14px; height: 14px; }
-
-    /* Окно покупки */
-    .vibe-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 5px; }
-    .vibe-option { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 12px; border-radius: 8px; border: 1px solid transparent; width: 70px; }
-    .vibe-option:hover { opacity: 0.8; background: rgba(255,255,255,0.05); }
-    .vibe-option.selected { opacity: 1; border-color: currentColor; background: rgba(255,255,255,0.05); box-shadow: 0 0 15px currentColor inset; transform: scale(1.05); }
-    .vibe-option svg { width: 36px; height: 36px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 5px currentColor); }
-
     </style>
 </head>
 <body>
@@ -314,8 +291,6 @@
                     <div style="font-size: 24px; color: #c4d1b8; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 10px;" id="title-display">Название</div>
                     
                     <div class="genre-badges" id="genres-display" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 15px;"></div>
-
-                    <div id="badges-container" class="badges-container"></div>
                     
                     <div style="background: var(--theme-panel-header); border: 1px solid var(--theme-panel-border); border-radius: 6px; padding: 4px; color: var(--theme-primary); text-shadow: 0 0 10px var(--theme-glow); font-size: 16px; text-transform: uppercase; font-weight: bold; text-align: center; margin: 5px 0 10px 0; letter-spacing: 2px;">Об игре</div>
                     
@@ -469,56 +444,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА ПОКУПКИ БЕЙДЖА -->
-    <div id="badge-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-box" style="width: 550px;">
-            <div class="close-btn" onclick="document.getElementById('badge-modal').style.display='none'">×</div>
-            <h2 class="modal-title" id="badge-modal-title">Захватить слот</h2>
-            
-            <div style="text-align: center; color: #a4b09c; margin-bottom: 25px; font-size: 18px;">
-                Стоимость перебития: <span id="badge-modal-price" style="color: #a6e3a1; font-weight: bold; font-size: 24px;">1</span> <img src="icons/BILET.png" style="width:20px; vertical-align:middle; filter: drop-shadow(0 0 5px #a6e3a1);">
-            </div>
-
-            <div class="input-group">
-                <span class="input-label" style="justify-content: center; color: #c4d1b8;">Короткий вердикт (макс. 35 символов)</span>
-                <input type="text" id="badge-text-input" maxlength="35" placeholder="Например: Сгорел на первом боссе..." style="text-align: center; font-size: 20px;">
-            </div>
-
-            <div class="input-group" style="margin-top: 25px;">
-                <span class="input-label" style="justify-content: center; color: #c4d1b8; margin-bottom: 10px;">Выберите Вайб (Эмоцию)</span>
-                <div class="vibe-selector">
-                    <!-- Гнев (Злое лицо) -->
-                    <div class="vibe-option" style="color: #ff4a4a;" onclick="selectVibe('rage')" id="vibe-opt-rage">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0 -18a9 9 0 0 1 0 18z" /><path d="M8 9l2 1" /><path d="M16 9l-2 1" /><path d="M14.5 16.05a3.5 3.5 0 0 0 -5 0" /></svg>
-                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Гнев</span>
-                    </div>
-                    <!-- Кал (Какашка) -->
-                    <div class="vibe-option" style="color: #d98a59;" onclick="selectVibe('poop')" id="vibe-opt-poop">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10a4 4 0 1 1 8 0c0 1.5 -1.5 2 -1.5 2c1.5 0 2.5 1 2.5 2.5c0 1.5 -1.5 2.5 -2.5 2.5c1.5 1 1.5 3 -1.5 3h-6c-3 0 -3 -2 -1.5 -3c-1 0 -2.5 -1 -2.5 -2.5c0 -1.5 1 -2.5 2.5 -2.5c0 0 -1.5 -.5 -1.5 -2z" /><path d="M10 14h.01M14 14h.01" /><path d="M10 18a3.5 3.5 0 0 0 4 0" /></svg>
-                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Кал</span>
-                    </div>
-                    <!-- Клоун (Мем) -->
-                    <div class="vibe-option" style="color: #cba6f7;" onclick="selectVibe('meme')" id="vibe-opt-meme">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9 9h.01M15 9h.01" /><circle cx="12" cy="13" r="2" fill="currentColor" /><path d="M9 17c1 1 2 1 3 1s2 0 3-1" /><path d="M5 8c-1.5-1.5-1-4 1-4s3 1.5 3 2" /><path d="M19 8c1.5-1.5 1-4-1-4s-3 1.5-3 2" /></svg>
-                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Клоун</span>
-                    </div>
-                    <!-- Духота (Череп) -->
-                    <div class="vibe-option" style="color: #a6e3a1;" onclick="selectVibe('toxic')" id="vibe-opt-toxic">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c4.418 0 8 3.358 8 7.5c0 1.901 -.755 3.637 -2 4.96l0 2.54a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1v-2.54c-1.245 -1.323 -2 -3.059 -2 -4.96c0 -4.142 3.582 -7.5 8 -7.5z" /><path d="M10 17v3M14 17v3M9 11h.01M15 11h.01" /></svg>
-                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Духота</span>
-                    </div>
-                    <!-- База (Очки) -->
-                    <div class="vibe-option" style="color: #ffd700;" onclick="selectVibe('masterpiece')" id="vibe-opt-masterpiece">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 10v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" /><path d="M15 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14h2" /></svg>
-                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">База</span>
-                    </div>
-                </div>
-            </div>
-
-            <button class="rate-btn" id="buy-badge-btn" style="margin-top:25px;" onclick="confirmBuyBadge()">Купить слот</button>
-        </div>
-    </div>
-
     <!-- СКРИПТЫ -->
     <script>
         const TWITCH_CLIENT_ID = 'gko3y2nhxg0ocvte0ru970pbau3eiq';
@@ -530,18 +455,6 @@
         let radarChart = null, modalRadarChart = null, editingTarget = { type: null, id: null, parentId: null }; 
         let currentDisplayMode = localStorage.getItem('skinwalker_display_mode') || 'score';
         let visRoles = JSON.parse(localStorage.getItem('skinwalker_vis_roles')) || { streamer: true, me: true, chat: true };
-
-        let gameBadges = [null, null, null]; 
-        let selectedSlotToBuy = -1;
-        let selectedVibe = 'rage';
-
-        const VIBES = {
-            'rage': { color: '#ff4a4a', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0 -18a9 9 0 0 1 0 18z" /><path d="M8 9l2 1" /><path d="M16 9l-2 1" /><path d="M14.5 16.05a3.5 3.5 0 0 0 -5 0" /></svg>' },
-            'poop': { color: '#d98a59', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10a4 4 0 1 1 8 0c0 1.5 -1.5 2 -1.5 2c1.5 0 2.5 1 2.5 2.5c0 1.5 -1.5 2.5 -2.5 2.5c1.5 1 1.5 3 -1.5 3h-6c-3 0 -3 -2 -1.5 -3c-1 0 -2.5 -1 -2.5 -2.5c0 -1.5 1 -2.5 2.5 -2.5c0 0 -1.5 -.5 -1.5 -2z" /><path d="M10 14h.01M14 14h.01" /><path d="M10 18a3.5 3.5 0 0 0 4 0" /></svg>' },
-            'meme': { color: '#cba6f7', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9 9h.01M15 9h.01" /><circle cx="12" cy="13" r="2" fill="currentColor" /><path d="M9 17c1 1 2 1 3 1s2 0 3-1" /><path d="M5 8c-1.5-1.5-1-4 1-4s3 1.5 3 2" /><path d="M19 8c1.5-1.5 1-4-1-4s-3 1.5-3 2" /></svg>' },
-            'toxic': { color: '#a6e3a1', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c4.418 0 8 3.358 8 7.5c0 1.901 -.755 3.637 -2 4.96l0 2.54a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1v-2.54c-1.245 -1.323 -2 -3.059 -2 -4.96c0 -4.142 3.582 -7.5 8 -7.5z" /><path d="M10 17v3M14 17v3M9 11h.01M15 11h.01" /></svg>' },
-            'masterpiece': { color: '#ffd700', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 10v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" /><path d="M15 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14a2 2 0 1 1 -4 0a2 2 0 0 1 4 0z" /><path d="M9 14h2" /></svg>' }
-        };
 
         const radarColors = [
             { bg: 'rgba(203, 166, 247, 0.2)', border: '#cba6f7' }, 
@@ -1332,131 +1245,9 @@
                     rateBtn.innerText = hasRated ? "Изменить оценку" : "Оценить игру"; rateBtn.style.opacity = "1"; rateBtn.style.pointerEvents = "auto";
                 } else { rateBtn.innerText = "Оценить игру"; rateBtn.style.opacity = "0.5"; rateBtn.style.pointerEvents = "none"; }
 
-                await loadBadges();
                 await loadComments(); 
                 loadingScreen.style.display = 'none'; document.getElementById('main-layout').style.display = 'flex';
             } catch(e) { console.error(e); document.getElementById('loading-screen').innerHTML = `<span style="color:#ff5555;">ОШИБКА: ${e.message}</span><br><br><span style="font-size:16px; color:#a4b09c;">Нажми <b>Ctrl + F5</b>, чтобы сбросить кеш.</span>`; }
-        }
-
-        async function loadBadges() {
-            try {
-                const res = await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/badges.json`, { cache: 'no-store' });
-                if (res.ok) {
-                    const data = await res.json();
-                    gameBadges = Array.isArray(data) ? data : (data ? Object.values(data) : [null, null, null]);
-                }
-                while(gameBadges.length < 3) gameBadges.push(null);
-                renderBadges();
-            } catch(e) { console.error("Error loading badges", e); }
-        }
-
-        function renderBadges() {
-            const container = document.getElementById('badges-container');
-            if (!container) return;
-            container.innerHTML = '';
-
-            for(let i=0; i<3; i++) {
-                const b = gameBadges[i];
-                if (!b) {
-                    container.innerHTML += `
-                        <div class="badge-slot badge-empty" onclick="openBadgeModal(${i})">
-                            <div class="badge-empty-text">+ Захватить слот (1 <img src="icons/BILET.png" style="width:16px;">)</div>
-                        </div>
-                    `;
-                } else {
-                    const vibe = VIBES[b.vibe] || VIBES['rage'];
-                    const price = b.price || 1;
-                    const bgStyle = `background: linear-gradient(90deg, ${vibe.color}15 0%, rgba(14,17,13,0.6) 100%); border-color: ${vibe.color}50;`;
-                    
-                    container.innerHTML += `
-                        <div class="badge-slot" style="${bgStyle}" onclick="openBadgeModal(${i})">
-                            <div class="badge-content">
-                                <img src="${b.avatar}" class="badge-avatar" style="border-color: ${vibe.color}; box-shadow: 0 0 8px ${vibe.color}50;">
-                                <div class="badge-icon" style="color: ${vibe.color};">${vibe.svg}</div>
-                                <div class="badge-text" style="color: #fff;">${b.text}</div>
-                            </div>
-                            <div class="badge-price" style="color: #a6e3a1; border: 1px solid #4a5c41;">
-                                ${price} <img src="icons/BILET.png">
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-        }
-
-        function openBadgeModal(slotIndex) {
-            if (!currentUser) { showToast("Сначала войди через Twitch!", true); return; }
-            selectedSlotToBuy = slotIndex;
-            const b = gameBadges[slotIndex];
-            
-            if (b && b.userId === currentUser.id) { showToast("Это уже твой слот!", true); return; }
-
-            const currentPrice = b ? (b.price || 1) : 0;
-            const nextPrice = currentPrice + 1;
-
-            document.getElementById('badge-modal-title').innerText = b ? 'Перебить слот' : 'Захватить слот';
-            document.getElementById('badge-modal-price').innerText = nextPrice;
-            document.getElementById('badge-text-input').value = '';
-            selectVibe('rage'); 
-
-            document.getElementById('badge-modal').style.display = 'flex';
-        }
-
-        function selectVibe(vibeKey) {
-            selectedVibe = vibeKey;
-            document.querySelectorAll('.vibe-option').forEach(el => el.classList.remove('selected'));
-            document.getElementById(`vibe-opt-${vibeKey}`).classList.add('selected');
-        }
-
-        async function confirmBuyBadge() {
-            if (selectedSlotToBuy < 0) return;
-            const text = document.getElementById('badge-text-input').value.trim();
-            if (!text) { showToast("Введите текст вердикта!", true); return; }
-
-            const b = gameBadges[selectedSlotToBuy];
-            const currentPrice = b ? (b.price || 1) : 0;
-            const priceToPay = currentPrice + 1;
-
-            const btn = document.getElementById('buy-badge-btn');
-            btn.innerText = "ОБРАБОТКА..."; btn.style.pointerEvents = 'none';
-
-            try {
-                const userRes = await fetch(`${FIREBASE_BASE}/global_users/${currentUser.login.toLowerCase()}.json`);
-                let userData = await userRes.json();
-                let currentTickets = (userData && userData.wallet_tickets) ? parseInt(userData.wallet_tickets) : 0;
-
-                if (currentTickets < priceToPay) {
-                    showToast(`Недостаточно билетов! Нужно: ${priceToPay}`, true);
-                    btn.innerText = "Купить слот"; btn.style.pointerEvents = 'auto'; return;
-                }
-
-                const newTickets = currentTickets - priceToPay;
-                await fetch(`${FIREBASE_BASE}/global_users/${currentUser.login.toLowerCase()}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ wallet_tickets: newTickets })
-                });
-
-                const newBadge = {
-                    userId: currentUser.id, login: currentUser.login, displayName: currentUser.display_name,
-                    avatar: currentUser.profile_image_url, text: text, vibe: selectedVibe,
-                    price: priceToPay, timestamp: Date.now()
-                };
-                gameBadges[selectedSlotToBuy] = newBadge;
-
-                await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/badges.json`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(gameBadges)
-                });
-
-                if (window.globalUsersDB[currentUser.login.toLowerCase()]) { window.globalUsersDB[currentUser.login.toLowerCase()].wallet_tickets = newTickets; }
-                renderProfileUI();
-
-                showToast("✅ Слот успешно захвачен!");
-                document.getElementById('badge-modal').style.display = 'none';
-                renderBadges();
-            } catch(e) { console.error(e); showToast("❌ Ошибка при покупке!", true); }
-
-            btn.innerText = "Купить слот"; btn.style.pointerEvents = 'auto';
         }
 
         window.onload = loadGameData;
