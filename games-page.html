@@ -526,6 +526,17 @@
         let currentDisplayMode = localStorage.getItem('skinwalker_display_mode') || 'score';
         let visRoles = JSON.parse(localStorage.getItem('skinwalker_vis_roles')) || { streamer: true, me: true, chat: true };
 
+        let gameBadges = [null, null, null]; 
+        let selectedSlotToBuy = -1;
+        let selectedVibe = 'rage';
+
+        const VIBES = {
+            'rage': { color: '#ff4a4a', svg: '<svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c-2.28 0-3-4.5-3-4.5s.53 1.15 1.5 2.21c1.88-2.61 2.37-6.52 2.37-6.52a8.5 8.5 0 11-5.32 14.49z"/></svg>' },
+            'masterpiece': { color: '#ffd700', svg: '<svg viewBox="0 0 24 24"><path d="M2 4l3 7h14l3-7-6 5-4-7-4 7zM3 14h18v4H3z"/></svg>' },
+            'toxic': { color: '#a6e3a1', svg: '<svg viewBox="0 0 24 24"><path d="M12 2C8.69 2 6 4.69 6 8c0 2.21.94 4.19 2.5 5.5V17h7v-3.5c1.56-1.31 2.5-3.29 2.5-5.5 0-3.31-2.69-6-6-6zm-1 7H9V9h2v2zm4 0h-2V9h2v2z"/></svg>' },
+            'meme': { color: '#cba6f7', svg: '<svg viewBox="0 0 24 24"><path d="M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20zm0 14c-2.33 0-4.32-1.45-5.12-3.5h10.24c-.8 2.05-2.79 3.5-5.12 3.5z"/></svg>' }
+        };
+
         const radarColors = [
             { bg: 'rgba(203, 166, 247, 0.2)', border: '#cba6f7' }, 
             { bg: 'rgba(184, 168, 123, 0.2)', border: '#b8a87b' }, 
@@ -1315,9 +1326,131 @@
                     rateBtn.innerText = hasRated ? "Изменить оценку" : "Оценить игру"; rateBtn.style.opacity = "1"; rateBtn.style.pointerEvents = "auto";
                 } else { rateBtn.innerText = "Оценить игру"; rateBtn.style.opacity = "0.5"; rateBtn.style.pointerEvents = "none"; }
 
+                await loadBadges();
                 await loadComments(); 
                 loadingScreen.style.display = 'none'; document.getElementById('main-layout').style.display = 'flex';
             } catch(e) { console.error(e); document.getElementById('loading-screen').innerHTML = `<span style="color:#ff5555;">ОШИБКА: ${e.message}</span><br><br><span style="font-size:16px; color:#a4b09c;">Нажми <b>Ctrl + F5</b>, чтобы сбросить кеш.</span>`; }
+        }
+
+        async function loadBadges() {
+            try {
+                const res = await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/badges.json`, { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    gameBadges = Array.isArray(data) ? data : (data ? Object.values(data) : [null, null, null]);
+                }
+                while(gameBadges.length < 3) gameBadges.push(null);
+                renderBadges();
+            } catch(e) { console.error("Error loading badges", e); }
+        }
+
+        function renderBadges() {
+            const container = document.getElementById('badges-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            for(let i=0; i<3; i++) {
+                const b = gameBadges[i];
+                if (!b) {
+                    container.innerHTML += `
+                        <div class="badge-slot badge-empty" onclick="openBadgeModal(${i})">
+                            <div class="badge-empty-text">+ Захватить слот (1 <img src="icons/BILET.png" style="width:16px;">)</div>
+                        </div>
+                    `;
+                } else {
+                    const vibe = VIBES[b.vibe] || VIBES['rage'];
+                    const price = b.price || 1;
+                    const bgStyle = `background: linear-gradient(90deg, ${vibe.color}15 0%, rgba(14,17,13,0.6) 100%); border-color: ${vibe.color}50;`;
+                    
+                    container.innerHTML += `
+                        <div class="badge-slot" style="${bgStyle}" onclick="openBadgeModal(${i})">
+                            <div class="badge-content">
+                                <img src="${b.avatar}" class="badge-avatar" style="border-color: ${vibe.color}; box-shadow: 0 0 8px ${vibe.color}50;">
+                                <div class="badge-icon" style="color: ${vibe.color};">${vibe.svg}</div>
+                                <div class="badge-text" style="color: #fff;">${b.text}</div>
+                            </div>
+                            <div class="badge-price" style="color: #a6e3a1; border: 1px solid #4a5c41;">
+                                ${price} <img src="icons/BILET.png">
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function openBadgeModal(slotIndex) {
+            if (!currentUser) { showToast("Сначала войди через Twitch!", true); return; }
+            selectedSlotToBuy = slotIndex;
+            const b = gameBadges[slotIndex];
+            
+            if (b && b.userId === currentUser.id) { showToast("Это уже твой слот!", true); return; }
+
+            const currentPrice = b ? (b.price || 1) : 0;
+            const nextPrice = currentPrice + 1;
+
+            document.getElementById('badge-modal-title').innerText = b ? 'Перебить слот' : 'Захватить слот';
+            document.getElementById('badge-modal-price').innerText = nextPrice;
+            document.getElementById('badge-text-input').value = '';
+            selectVibe('rage'); 
+
+            document.getElementById('badge-modal').style.display = 'flex';
+        }
+
+        function selectVibe(vibeKey) {
+            selectedVibe = vibeKey;
+            document.querySelectorAll('.vibe-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`vibe-opt-${vibeKey}`).classList.add('selected');
+        }
+
+        async function confirmBuyBadge() {
+            if (selectedSlotToBuy < 0) return;
+            const text = document.getElementById('badge-text-input').value.trim();
+            if (!text) { showToast("Введите текст вердикта!", true); return; }
+
+            const b = gameBadges[selectedSlotToBuy];
+            const currentPrice = b ? (b.price || 1) : 0;
+            const priceToPay = currentPrice + 1;
+
+            const btn = document.getElementById('buy-badge-btn');
+            btn.innerText = "ОБРАБОТКА..."; btn.style.pointerEvents = 'none';
+
+            try {
+                const userRes = await fetch(`${FIREBASE_BASE}/global_users/${currentUser.login.toLowerCase()}.json`);
+                let userData = await userRes.json();
+                let currentTickets = (userData && userData.wallet_tickets) ? parseInt(userData.wallet_tickets) : 0;
+
+                if (currentTickets < priceToPay) {
+                    showToast(`Недостаточно билетов! Нужно: ${priceToPay}`, true);
+                    btn.innerText = "Купить слот"; btn.style.pointerEvents = 'auto'; return;
+                }
+
+                const newTickets = currentTickets - priceToPay;
+                await fetch(`${FIREBASE_BASE}/global_users/${currentUser.login.toLowerCase()}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ wallet_tickets: newTickets })
+                });
+
+                const newBadge = {
+                    userId: currentUser.id, login: currentUser.login, displayName: currentUser.display_name,
+                    avatar: currentUser.profile_image_url, text: text, vibe: selectedVibe,
+                    price: priceToPay, timestamp: Date.now()
+                };
+                gameBadges[selectedSlotToBuy] = newBadge;
+
+                await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/badges.json`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(gameBadges)
+                });
+
+                if (window.globalUsersDB[currentUser.login.toLowerCase()]) { window.globalUsersDB[currentUser.login.toLowerCase()].wallet_tickets = newTickets; }
+                renderProfileUI();
+
+                showToast("✅ Слот успешно захвачен!");
+                document.getElementById('badge-modal').style.display = 'none';
+                renderBadges();
+            } catch(e) { console.error(e); showToast("❌ Ошибка при покупке!", true); }
+
+            btn.innerText = "Купить слот"; btn.style.pointerEvents = 'auto';
         }
 
         window.onload = loadGameData;
