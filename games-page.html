@@ -229,6 +229,29 @@
         .status-online { background: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; }
         .status-offline { background: #555; }
 
+         /* --- ВЕРДИКТ ЧАТА (БЕЙДЖИ) --- */
+    .badges-container { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; }
+    .badge-slot { display: flex; align-items: center; justify-content: space-between; background: rgba(14, 17, 13, 0.6); border: 1px solid var(--theme-panel-border); border-radius: 8px; padding: 6px 10px; cursor: pointer; transition: 0.3s; backdrop-filter: blur(5px); min-height: 44px; position: relative; overflow: hidden; }
+    .badge-slot:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); filter: brightness(1.2); }
+    .badge-empty { border: 1px dashed #4a5c41; justify-content: center; opacity: 0.7; }
+    .badge-empty:hover { opacity: 1; border-color: var(--theme-primary); background: rgba(166, 227, 161, 0.05); }
+    .badge-empty-text { font-size: 14px; color: #829c73; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
+    
+    .badge-content { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+    .badge-avatar { width: 30px; height: 30px; border-radius: 4px; object-fit: cover; border: 1px solid; flex-shrink: 0; background: #000; }
+    .badge-icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .badge-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 5px currentColor); }
+    .badge-text { font-size: 15px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; text-shadow: 1px 1px 2px #000; }
+    .badge-price { display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 4px; font-size: 14px; font-weight: bold; font-family: sans-serif; flex-shrink: 0; }
+    .badge-price img { width: 14px; height: 14px; }
+
+    /* Окно покупки */
+    .vibe-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 5px; }
+    .vibe-option { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 12px; border-radius: 8px; border: 1px solid transparent; width: 70px; }
+    .vibe-option:hover { opacity: 0.8; background: rgba(255,255,255,0.05); }
+    .vibe-option.selected { opacity: 1; border-color: currentColor; background: rgba(255,255,255,0.05); box-shadow: 0 0 15px currentColor inset; transform: scale(1.05); }
+    .vibe-option svg { width: 36px; height: 36px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 5px currentColor); }
+
     </style>
 </head>
 <body>
@@ -291,6 +314,8 @@
                     <div style="font-size: 24px; color: #c4d1b8; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 10px;" id="title-display">Название</div>
                     
                     <div class="genre-badges" id="genres-display" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 15px;"></div>
+
+                    <div id="badges-container" class="badges-container"></div>
                     
                     <div style="background: var(--theme-panel-header); border: 1px solid var(--theme-panel-border); border-radius: 6px; padding: 4px; color: var(--theme-primary); text-shadow: 0 0 10px var(--theme-glow); font-size: 16px; text-transform: uppercase; font-weight: bold; text-align: center; margin: 5px 0 10px 0; letter-spacing: 2px;">Об игре</div>
                     
@@ -441,6 +466,51 @@
                 <input type="text" id="lb-search" class="search-input" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid #4a5c41; border-radius: 8px; padding: 12px 15px; color: #c4d1b8; outline: none; font-family: 'Neucha', cursive; font-size: 16px;" placeholder="Введите никнейм для поиска..." oninput="filterLeaderboard()">
             </div>
             <div class="leaderboard-list" id="leaderboard-list"></div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ПОКУПКИ БЕЙДЖА -->
+    <div id="badge-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box" style="width: 550px;">
+            <div class="close-btn" onclick="document.getElementById('badge-modal').style.display='none'">×</div>
+            <h2 class="modal-title" id="badge-modal-title">Захватить слот</h2>
+            
+            <div style="text-align: center; color: #a4b09c; margin-bottom: 25px; font-size: 18px;">
+                Стоимость перебития: <span id="badge-modal-price" style="color: #a6e3a1; font-weight: bold; font-size: 24px;">1</span> <img src="icons/BILET.png" style="width:20px; vertical-align:middle; filter: drop-shadow(0 0 5px #a6e3a1);">
+            </div>
+
+            <div class="input-group">
+                <span class="input-label" style="justify-content: center; color: #c4d1b8;">Короткий вердикт (макс. 35 символов)</span>
+                <input type="text" id="badge-text-input" maxlength="35" placeholder="Например: Сгорел на первом боссе..." style="text-align: center; font-size: 20px;">
+            </div>
+
+            <div class="input-group" style="margin-top: 25px;">
+                <span class="input-label" style="justify-content: center; color: #c4d1b8; margin-bottom: 10px;">Выберите Вайб (Эмоцию)</span>
+                <div class="vibe-selector">
+                    <!-- Гнев -->
+                    <div class="vibe-option" style="color: #ff4a4a;" onclick="selectVibe('rage')" id="vibe-opt-rage">
+                        <svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c-2.28 0-3-4.5-3-4.5s.53 1.15 1.5 2.21c1.88-2.61 2.37-6.52 2.37-6.52a8.5 8.5 0 11-5.32 14.49z"/></svg>
+                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Гнев</span>
+                    </div>
+                    <!-- Шедевр -->
+                    <div class="vibe-option" style="color: #ffd700;" onclick="selectVibe('masterpiece')" id="vibe-opt-masterpiece">
+                        <svg viewBox="0 0 24 24"><path d="M2 4l3 7h14l3-7-6 5-4-7-4 7zM3 14h18v4H3z"/></svg>
+                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Шедевр</span>
+                    </div>
+                    <!-- Духота -->
+                    <div class="vibe-option" style="color: #a6e3a1;" onclick="selectVibe('toxic')" id="vibe-opt-toxic">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.69 2 6 4.69 6 8c0 2.21.94 4.19 2.5 5.5V17h7v-3.5c1.56-1.31 2.5-3.29 2.5-5.5 0-3.31-2.69-6-6-6zm-1 7H9V9h2v2zm4 0h-2V9h2v2z"/></svg>
+                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Духота</span>
+                    </div>
+                    <!-- Мем -->
+                    <div class="vibe-option" style="color: #cba6f7;" onclick="selectVibe('meme')" id="vibe-opt-meme">
+                        <svg viewBox="0 0 24 24"><path d="M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20zm0 14c-2.33 0-4.32-1.45-5.12-3.5h10.24c-.8 2.05-2.79 3.5-5.12 3.5z"/></svg>
+                        <span style="font-size:12px; font-weight:bold; text-transform:uppercase; font-family: sans-serif;">Мем</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="rate-btn" id="buy-badge-btn" style="margin-top:25px;" onclick="confirmBuyBadge()">Купить слот</button>
         </div>
     </div>
 
