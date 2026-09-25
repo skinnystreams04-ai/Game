@@ -1095,42 +1095,55 @@
 
                 const playerWrapper = document.getElementById('player-wrapper');
 
-                // 3. ОТРИСОВКА ПЛЕЕРА И КНОПКИ "НА YOUTUBE"
+                // 3. ОТРИСОВКА ПЛЕЕРА И НАВИГАЦИИ
                 if (validUrls.length > 0) {
                     playerWrapper.style.display = 'block';
                     const firstSafeUrl = validUrls[0].url;
-                    const firstOriginalUrl = validUrls[0].original;
                     
-                    // Добавляем красную кнопку поверх плеера и исправляем Fullscreen
-                    playerWrapper.innerHTML = `
-                        <div style="position: absolute; top: 15px; right: 15px; z-index: 50;">
-                            <a id="youtube-direct-link" href="${firstOriginalUrl}" target="_blank" 
-                               style="background: rgba(255, 85, 85, 0.85); color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-family: 'Neucha', cursive, sans-serif; font-size: 16px; font-weight: bold; border: 1px solid #ff5555; box-shadow: 0 0 10px rgba(255, 85, 85, 0.5); backdrop-filter: blur(4px); transition: 0.2s; display: flex; align-items: center; gap: 8px;"
-                               onmouseover="this.style.background='#ff5555'; this.style.boxShadow='0 0 15px #ff5555';"
-                               onmouseout="this.style.background='rgba(255, 85, 85, 0.85)'; this.style.boxShadow='0 0 10px rgba(255, 85, 85, 0.5)';">
-                                ▶ На YouTube (если ошибка)
-                            </a>
-                        </div>
-                        <iframe id="main-player" src="${firstSafeUrl}" style="width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
-                    `;
+                    // Чистый плеер БЕЗ кнопок поверх него
+                    playerWrapper.innerHTML = `<iframe id="main-player" src="${firstSafeUrl}" style="width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>`;
                     
-                    if (validUrls.length > 1 && epContainer) {
-                        epContainer.style.cssText = "display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: rgba(14, 17, 13, 0.6); padding: 10px; border-radius: 8px; border: 1px solid var(--theme-panel-border); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);";
+                    if (epContainer) {
+                        // Оформляем панель над плеером
+                        epContainer.style.cssText = "display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: rgba(14, 17, 13, 0.6); padding: 10px; border-radius: 8px; border: 1px solid var(--theme-panel-border); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); align-items: center;";
                         
-                        validUrls.forEach((item, index) => {
-                            const btn = document.createElement('button'); 
-                            btn.className = `season-btn ${index === 0 ? 'active' : ''}`; 
-                            btn.innerText = item.label === 'Часть' ? `Часть ${index + 1}` : item.label; 
-                            btn.style.cssText = "font-size: 15px; padding: 8px 16px; flex: 1; min-width: 100px; text-align: center;";
-                            
-                            btn.onclick = () => { 
-                                document.querySelectorAll('#episodes-container .season-btn').forEach(b => b.classList.remove('active')); 
-                                btn.classList.add('active'); 
-                                document.getElementById('main-player').src = item.url; 
-                                document.getElementById('youtube-direct-link').href = item.original; // Кнопка меняет линк вместе с серией
-                            };
-                            epContainer.appendChild(btn);
-                        });
+                        if (validUrls.length > 1) {
+                            validUrls.forEach((item, index) => {
+                                const btn = document.createElement('button'); 
+                                btn.className = `season-btn ${index === 0 ? 'active' : ''}`; 
+                                btn.innerText = item.label === 'Часть' ? `Часть ${index + 1}` : item.label; 
+                                btn.style.cssText = "font-size: 14px; padding: 6px 16px; flex: 1; min-width: 100px; text-align: center;";
+                                
+                                btn.onclick = () => { 
+                                    document.querySelectorAll('#episodes-container .season-btn').forEach(b => b.classList.remove('active')); 
+                                    btn.classList.add('active'); 
+                                    document.getElementById('main-player').src = item.url; 
+                                    document.getElementById('youtube-direct-link').href = item.original; // Ссылка обновляется
+                                };
+                                epContainer.appendChild(btn);
+                            });
+                        } else {
+                            // Если часть всего одна, добавляем аккуратный текст, чтобы панель не пустовала
+                            const label = document.createElement('span');
+                            label.innerText = 'ЗАПИСЬ ПРОХОЖДЕНИЯ';
+                            label.style.cssText = 'color: #829c73; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 15px; margin-left: 5px;';
+                            epContainer.appendChild(label);
+                        }
+
+                        // Кнопка-ссылка на Ютуб (уезжает в самый правый край)
+                        const extBtn = document.createElement('a');
+                        extBtn.id = 'youtube-direct-link';
+                        extBtn.href = validUrls[0].original;
+                        extBtn.target = '_blank';
+                        extBtn.innerHTML = '▶ Смотреть на YouTube';
+                        extBtn.title = 'Откроет видео в новой вкладке, если плеер Ютуба выдает ошибку';
+                        extBtn.style.cssText = "background: rgba(255, 85, 85, 0.1); color: #ff5555; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-family: 'Neucha', cursive, sans-serif; font-size: 14px; font-weight: bold; border: 1px solid #ff5555; transition: 0.3s; margin-left: auto; white-space: nowrap;";
+                        
+                        // Анимация при наведении
+                        extBtn.onmouseover = function() { this.style.background = '#ff5555'; this.style.color = '#fff'; this.style.boxShadow = '0 0 10px rgba(255, 85, 85, 0.5)'; };
+                        extBtn.onmouseout = function() { this.style.background = 'rgba(255, 85, 85, 0.1)'; this.style.color = '#ff5555'; this.style.boxShadow = 'none'; };
+                        
+                        epContainer.appendChild(extBtn);
                     }
                 } else {
                     playerWrapper.style.display = 'flex'; playerWrapper.style.alignItems = 'center'; playerWrapper.style.justifyContent = 'center'; playerWrapper.style.background = '#050605'; 
