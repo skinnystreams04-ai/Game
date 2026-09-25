@@ -827,152 +827,6 @@
             });
         }
 
-        async function loadGameData() {
-            try {
-                const loadingScreen = document.getElementById('loading-screen');
-                try { const dbRes = await fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' }); if (dbRes.ok) { window.globalUsersDB = (await dbRes.json()) || {}; } } catch(e) {}
-                loadingScreen.innerText = "Авторизация Twitch..."; await checkTwitchAuth();
-                loadingScreen.innerText = "Инициализация графиков..."; initCharts();
-                const urlParams = new URLSearchParams(window.location.search); currentFranchiseId = urlParams.get('id');
-                if(!currentFranchiseId) throw new Error("Игра не выбрана в ссылке!");
-
-                loadingScreen.innerText = "Загрузка базы данных...";
-                const res = await fetch(`${FIREBASE_BASE}/games_db/${encodeURIComponent(currentFranchiseId)}.json`, { cache: 'no-store' });
-                if (!res.ok) throw new Error(`Ошибка сервера: HTTP ${res.status}`);
-                gameData = await res.json();
-                if (!gameData) throw new Error("Игра не найдена в базе данных!");
-                console.log("ДАННЫЕ ИЗ БАЗЫ:", gameData);
-
-                loadingScreen.innerText = "Рендеринг игры...";
-                const epContainer = document.getElementById('episodes-container'); if (epContainer) epContainer.innerHTML = '';
-                
-                // ИСПРАВЛЕНИЕ КРАША: Жесткий фильтр пустых ссылок
-                const rawUrls = gameData.videoUrls || (gameData.videoUrl ? [gameData.videoUrl] : []);
-                const urls = rawUrls.filter(u => { const urlStr = typeof u === 'object' ? u.url : u; return urlStr && urlStr.trim() !== ''; });
-                const playerWrapper = document.getElementById('player-wrapper');
-
-                if (urls.length > 0) {
-                    playerWrapper.style.display = 'block';
-                    playerWrapper.innerHTML = `<iframe id="main-player" src="about:blank" style="width: 100%; height: 100%; border: none;" allowfullscreen allow="autoplay"></iframe>`;
-                    if (urls.length > 1 && epContainer) {
-                        urls.forEach((urlItem, index) => {
-                            const isObj = typeof urlItem === 'object', linkUrl = isObj ? urlItem.url : urlItem, linkLabel = isObj ? urlItem.label : `Часть ${index + 1}`;
-                            const btn = document.createElement('button'); btn.className = `season-btn ${index === 0 ? 'active' : ''}`; btn.innerText = linkLabel; btn.style.fontSize = '14px'; btn.style.padding = '4px 12px';
-                            btn.onclick = () => { document.querySelectorAll('#episodes-container .season-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.getElementById('main-player').src = linkUrl; };
-                            epContainer.appendChild(btn);
-                        });
-                    }
-                    const firstUrl = typeof urls[0] === 'object' ? urls[0].url : urls[0]; document.getElementById('main-player').src = firstUrl;
-                } else {
-                    playerWrapper.style.display = 'flex'; playerWrapper.style.alignItems = 'center'; playerWrapper.style.justifyContent = 'center'; playerWrapper.style.background = '#050605'; 
-                    playerWrapper.innerHTML = `<span style="color: rgba(166, 227, 161, 0.3); font-size: 22px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Запись отсутствует</span>`; 
-                }
-
-                await applyDynamicTheme(gameData.coverUrl);
-                document.getElementById('cover-img').src = gameData.coverUrl || ''; 
-                document.getElementById('title-display').innerText = gameData.title || currentFranchiseId.replace(/_/g, ' ');
-                
-                // БЕЗОПАСНЫЙ ВЫВОД ИНФЫ С ПРОВЕРКОЙ НА ПУСТОТУ
-                const info = gameData.info || {};
-                const scoresInfo = gameData.scores || {};
-                
-                // Умный фильтр: если пусто или одни пробелы — ставим прочерк
-                const getVal = (val) => (val && String(val).trim() !== "") ? val : "---";
-                
-                // --- ОБ ИГРЕ ---
-                document.getElementById('year-display').innerText = getVal(info.year);
-                document.getElementById('format-display').innerText = getVal(info.format || info.platform);
-                document.getElementById('mode-display').innerText = getVal(info.mode);
-                document.getElementById('hltb-display').innerText = getVal(info.hltb || info.playtime);
-                document.getElementById('critic-display').innerText = getVal(info.rating || info.criticScore || info.critic || info.metacritic || info.score || info.critics || scoresInfo.metacritic || scoresInfo.critic);
-                document.getElementById('studio-display').innerText = getVal(info.studio || info.developer);
-                document.getElementById('engine-display').innerText = getVal(info.engine);
-                
-                // --- МОЁ ПРОХОЖДЕНИЕ ---
-                document.getElementById('status-display').innerText = getVal(info.status);
-                document.getElementById('hours-display').innerText = getVal(info.episodesTotal || info.hours);
-                document.getElementById('achievements-display').innerText = getVal(info.achievements);
-                document.getElementById('difficulty-display').innerText = getVal(info.difficulty);
-                document.getElementById('deaths-display').innerText = getVal(info.episodesWatched || info.deaths);
-                document.getElementById('source-display').innerText = getVal(info.source || info.pickedBy);
-                
-                if(info.dateWatched && String(info.dateWatched).trim() !== "") {
-                    const [y, m, d] = info.dateWatched.split('-'); document.getElementById('date-display').innerText = `${d}.${m}.${y}`;
-                } else { 
-                    document.getElementById('date-display').innerText = "---"; 
-                }
-                
-                document.getElementById('synopsis-display').innerText = getVal(info.description) !== "---" ? info.description : "Описание отсутствует.";
-                
-                const genreDict = { 'action': 'Экшен', 'adventure': 'Приключения', 'indie': 'Инди', 'rpg': 'РПГ', 'simulation': 'Симулятор', 'strategy': 'Стратегия', 'platformer': 'Платформер', 'shooter': 'Шутер', 'puzzle': 'Головоломка', 'horror': 'Хоррор', 'survival': 'Выживание', 'open world': 'Открытый мир', 'fighting': 'Файтинг', 'racing': 'Гонки', 'sports': 'Спорт', 'casual': 'Казуальная', 'multiplayer': 'Мультиплеер', 'co-op': 'Кооп', 'stealth': 'Стелс', 'metroidvania': 'Метроидвания', 'rogue-like': 'Рогалик', 'rogue-lite': 'Рогалик', 'hack and slash': 'Слэшер', 'visual novel': 'Новелла', 'sandbox': 'Песочница' };
-                if(info.genres) { document.getElementById('genres-display').innerHTML = info.genres.map(g => { const cleanG = g.trim().toLowerCase(); const translated = genreDict[cleanG] || g; return `<span class="genre-badge">${translated}</span>`; }).join(''); } else { document.getElementById('genres-display').innerHTML = ''; }
-
-                const commRes = await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/ratings.json`, { cache: 'no-store' });
-                if (!commRes.ok) throw new Error(`Ошибка загрузки оценок: HTTP ${commRes.status}`);
-                currentCommunityRatings = (await commRes.json()) || {};
-
-                let chatTotalOvr = 0, chatVis = 0, chatGame = 0, chatSnd = 0, chatTech = 0, chatAtm = 0, chatCount = 0, meData = null;
-                for (const [userId, r] of Object.entries(currentCommunityRatings)) {
-                    chatTotalOvr += safeNum(r.overall);
-                    if (r.theory) { chatVis += safeNum(r.theory.visuals); chatGame += safeNum(r.theory.gameplay); chatSnd += safeNum(r.theory.sound); chatTech += safeNum(r.theory.tech); chatAtm += safeNum(r.theory.atmosphere); }
-                    chatCount++; if (currentUser && userId === currentUser.id) { meData = r; }
-                }
-
-                const chatOvr = chatCount > 0 ? parseFloat((chatTotalOvr / chatCount).toFixed(1)) : 0;
-                const tChat = { visuals: chatCount > 0 ? parseFloat((chatVis/chatCount).toFixed(1)) : 0, gameplay: chatCount > 0 ? parseFloat((chatGame/chatCount).toFixed(1)) : 0, sound: chatCount > 0 ? parseFloat((chatSnd/chatCount).toFixed(1)) : 0, tech: chatCount > 0 ? parseFloat((chatTech/chatCount).toFixed(1)) : 0, atmosphere: chatCount > 0 ? parseFloat((chatAtm/chatCount).toFixed(1)) : 0 };
-                const chatTheoryAvg = calcTheoryAvg(tChat);
-
-                const meOvr = meData ? safeNum(meData.overall) : 0;
-                const tMe = meData && meData.theory ? meData.theory : {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0};
-                const meTheoryAvg = calcTheoryAvg(tMe);
-
-                const strScores = gameData.scores || {}; const strTier = strScores.tier || 'UNRANKED';
-                const tStr = strScores.theory || {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0};
-                const strTheoryAvg = calcTheoryAvg(tStr);
-
-                window.pageScores = { streamerAvg: strTheoryAvg, streamerTier: strTier, chat: chatOvr, me: meOvr };
-                
-                const renderLegendBox = (boxId, labelId, dotId, scoreId, scoreVal, colorObj) => {
-                    document.getElementById(boxId).style.cssText = getGlassBoxStyle(scoreVal);
-                    document.getElementById(labelId).style.color = getScoreColor(scoreVal, 1);
-                    document.getElementById(labelId).style.textShadow = getScoreShadow(scoreVal, false);
-                    document.getElementById(dotId).style.background = colorObj.border;
-                    document.getElementById(dotId).style.boxShadow = `0 0 5px ${colorObj.border}`;
-                    document.getElementById(scoreId).innerText = scoreVal > 0 ? scoreVal : '-';
-                    document.getElementById(scoreId).style.cssText = `color: #fff; text-shadow: ${getScoreShadow(scoreVal, false)};`;
-                };
-
-                renderLegendBox('legend-box-streamer', 'legend-label-streamer', 'dot-streamer', 'avg-streamer-score', strTheoryAvg, radarColors[0]);
-                renderLegendBox('legend-box-chat', 'legend-label-chat', 'dot-chat', 'avg-chat-score', chatTheoryAvg, radarColors[1]);
-                renderLegendBox('legend-box-me', 'legend-label-me', 'dot-me', 'avg-viewer-score', meTheoryAvg, radarColors[2]);
-
-                document.getElementById('breakdown-streamer').innerHTML = generateBreakdownHtml(tStr);
-                document.getElementById('breakdown-chat').innerHTML = generateBreakdownHtml(tChat);
-                document.getElementById('breakdown-viewer').innerHTML = generateBreakdownHtml(tMe);
-                
-                if (radarChart) {
-                    radarChart.data.datasets[0].data = [safeNum(tStr.visuals), safeNum(tStr.gameplay), safeNum(tStr.sound), safeNum(tStr.tech), safeNum(tStr.atmosphere)]; 
-                    radarChart.data.datasets[1].data = [safeNum(tChat.visuals), safeNum(tChat.gameplay), safeNum(tChat.sound), safeNum(tChat.tech), safeNum(tChat.atmosphere)]; 
-                    radarChart.data.datasets[2].data = [safeNum(tMe.visuals), safeNum(tMe.gameplay), safeNum(tMe.sound), safeNum(tMe.tech), safeNum(tMe.atmosphere)]; 
-                    const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary').trim();
-                    radarChart.options.scales.r.pointLabels.color = themeColor || '#c4d1b8'; radarChart.update();
-                }
-
-                applyPageVisuals(); // ВЫЗЫВАЕМ ПОСЛЕ РЕНДЕРА ЛЕГЕНДЫ!
-
-                const rateBtn = document.getElementById('rate-title-btn');
-                if (currentUser) {
-                    const isStreamer = currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase(); let hasRated = false;
-                    if (isStreamer && strTheoryAvg > 0) hasRated = true;
-                    if (!isStreamer && currentCommunityRatings[currentUser.id] && safeNum(currentCommunityRatings[currentUser.id].overall) > 0) hasRated = true;
-                    rateBtn.innerText = hasRated ? "Изменить оценку" : "Оценить игру"; rateBtn.style.opacity = "1"; rateBtn.style.pointerEvents = "auto";
-                } else { rateBtn.innerText = "Оценить игру"; rateBtn.style.opacity = "0.5"; rateBtn.style.pointerEvents = "none"; }
-
-                await loadComments(); 
-                loadingScreen.style.display = 'none'; document.getElementById('main-layout').style.display = 'flex';
-            } catch(e) { console.error(e); document.getElementById('loading-screen').innerHTML = `<span style="color:#ff5555;">ОШИБКА: ${e.message}</span><br><br><span style="font-size:16px; color:#a4b09c;">Нажми <b>Ctrl + F5</b>, чтобы сбросить кеш.</span>`; }
-        }
-
         function createCommentCard(c, isReply = false, parentId = null) {
             const authorId = c.userId || c.id, isMe = currentUser && authorId === currentUser.id, isAdminViewer = currentUser && currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase();
             const d = new Date(c.timestamp), dateStr = `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')} в ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
@@ -1169,6 +1023,218 @@
             if (!query) { renderLeaderboard(lbAllUsers); return; }
             const filtered = lbAllUsers.filter(u => (u.name || '').toString().toLowerCase().includes(query));
             renderLeaderboard(filtered);
+        }
+
+         function getSmartYouTubeUrl(url) {
+            if (!url) return null;
+            let str = url.trim();
+            
+            if (!str.startsWith('http')) { str = 'https://' + str; }
+            
+            if (str.includes('/embed/')) {
+                if (str.endsWith('/embed/') || str.endsWith('videoseries?list=')) return null;
+                return str.replace('youtube.com', 'youtube-nocookie.com');
+            }
+
+            const listMatch = str.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+            if (listMatch && listMatch[1]) {
+                return `https://www.youtube-nocookie.com/embed/videoseries?list=${listMatch[1]}`;
+            }
+
+            const videoMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|v\/|shorts\/|live\/))([a-zA-Z0-9_-]{11})/);
+            if (videoMatch && videoMatch[1]) {
+                return `https://www.youtube-nocookie.com/embed/${videoMatch[1]}`;
+            }
+
+            return null; 
+        }
+
+        async function loadGameData() {
+            try {
+                const loadingScreen = document.getElementById('loading-screen');
+                try { const dbRes = await fetch(`${FIREBASE_BASE}/global_users.json`, { cache: 'no-store' }); if (dbRes.ok) { window.globalUsersDB = (await dbRes.json()) || {}; } } catch(e) {}
+                loadingScreen.innerText = "Авторизация Twitch..."; await checkTwitchAuth();
+                loadingScreen.innerText = "Инициализация графиков..."; initCharts();
+                const urlParams = new URLSearchParams(window.location.search); currentFranchiseId = urlParams.get('id');
+                if(!currentFranchiseId) throw new Error("Игра не выбрана в ссылке!");
+
+                loadingScreen.innerText = "Загрузка базы данных...";
+                const res = await fetch(`${FIREBASE_BASE}/games_db/${encodeURIComponent(currentFranchiseId)}.json`, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`Ошибка сервера: HTTP ${res.status}`);
+                gameData = await res.json();
+                if (!gameData) throw new Error("Игра не найдена в базе данных!");
+
+                loadingScreen.innerText = "Рендеринг игры...";
+                const epContainer = document.getElementById('episodes-container'); if (epContainer) epContainer.innerHTML = '';
+                
+                // 1. УМНАЯ ДОСТАВАЛКА ДАННЫХ
+                let rawUrls = [];
+                if (gameData.videoUrls) {
+                    rawUrls = Array.isArray(gameData.videoUrls) ? gameData.videoUrls : Object.values(gameData.videoUrls);
+                } else if (gameData.videoUrl) {
+                    rawUrls = [gameData.videoUrl];
+                }
+                
+                // 2. ПАРСИНГ ССЫЛОК (Сохраняем оригинальную ссылку для кнопки)
+                const validUrls = [];
+                rawUrls.forEach(u => {
+                    if (!u) return;
+                    const isObj = typeof u === 'object';
+                    const originalStr = isObj ? (u.url || u.link) : u;
+                    if (!originalStr || originalStr.trim() === '') return;
+                    
+                    const safeUrl = getSmartYouTubeUrl(originalStr);
+                    if (safeUrl) {
+                        validUrls.push({ 
+                            label: (isObj && u.label) ? u.label : 'Часть', 
+                            url: safeUrl,
+                            original: originalStr // <--- Сохранили чистый линк
+                        });
+                    }
+                });
+
+                const playerWrapper = document.getElementById('player-wrapper');
+
+                // 3. ОТРИСОВКА ПЛЕЕРА И КНОПКИ "НА YOUTUBE"
+                if (validUrls.length > 0) {
+                    playerWrapper.style.display = 'block';
+                    const firstSafeUrl = validUrls[0].url;
+                    const firstOriginalUrl = validUrls[0].original;
+                    
+                    // Добавляем красную кнопку поверх плеера и исправляем Fullscreen
+                    playerWrapper.innerHTML = `
+                        <div style="position: absolute; top: 15px; right: 15px; z-index: 50;">
+                            <a id="youtube-direct-link" href="${firstOriginalUrl}" target="_blank" 
+                               style="background: rgba(255, 85, 85, 0.85); color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-family: 'Neucha', cursive, sans-serif; font-size: 16px; font-weight: bold; border: 1px solid #ff5555; box-shadow: 0 0 10px rgba(255, 85, 85, 0.5); backdrop-filter: blur(4px); transition: 0.2s; display: flex; align-items: center; gap: 8px;"
+                               onmouseover="this.style.background='#ff5555'; this.style.boxShadow='0 0 15px #ff5555';"
+                               onmouseout="this.style.background='rgba(255, 85, 85, 0.85)'; this.style.boxShadow='0 0 10px rgba(255, 85, 85, 0.5)';">
+                                ▶ На YouTube (если ошибка)
+                            </a>
+                        </div>
+                        <iframe id="main-player" src="${firstSafeUrl}" style="width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
+                    `;
+                    
+                    if (validUrls.length > 1 && epContainer) {
+                        epContainer.style.cssText = "display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: rgba(14, 17, 13, 0.6); padding: 10px; border-radius: 8px; border: 1px solid var(--theme-panel-border); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);";
+                        
+                        validUrls.forEach((item, index) => {
+                            const btn = document.createElement('button'); 
+                            btn.className = `season-btn ${index === 0 ? 'active' : ''}`; 
+                            btn.innerText = item.label === 'Часть' ? `Часть ${index + 1}` : item.label; 
+                            btn.style.cssText = "font-size: 15px; padding: 8px 16px; flex: 1; min-width: 100px; text-align: center;";
+                            
+                            btn.onclick = () => { 
+                                document.querySelectorAll('#episodes-container .season-btn').forEach(b => b.classList.remove('active')); 
+                                btn.classList.add('active'); 
+                                document.getElementById('main-player').src = item.url; 
+                                document.getElementById('youtube-direct-link').href = item.original; // Кнопка меняет линк вместе с серией
+                            };
+                            epContainer.appendChild(btn);
+                        });
+                    }
+                } else {
+                    playerWrapper.style.display = 'flex'; playerWrapper.style.alignItems = 'center'; playerWrapper.style.justifyContent = 'center'; playerWrapper.style.background = '#050605'; 
+                    playerWrapper.innerHTML = `<span style="color: rgba(166, 227, 161, 0.3); font-size: 22px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Запись отсутствует</span>`; 
+                }
+
+                await applyDynamicTheme(gameData.coverUrl);
+                document.getElementById('cover-img').src = gameData.coverUrl || ''; 
+                document.getElementById('title-display').innerText = gameData.title || currentFranchiseId.replace(/_/g, ' ');
+                
+                const info = gameData.info || {};
+                const scoresInfo = gameData.scores || {};
+                const getVal = (val) => (val && String(val).trim() !== "") ? val : "---";
+                
+                document.getElementById('year-display').innerText = getVal(info.year);
+                document.getElementById('format-display').innerText = getVal(info.format || info.platform);
+                document.getElementById('mode-display').innerText = getVal(info.mode);
+                document.getElementById('hltb-display').innerText = getVal(info.hltb || info.playtime);
+                document.getElementById('critic-display').innerText = getVal(info.rating || info.criticScore || info.critic || info.metacritic || info.score || info.critics || scoresInfo.metacritic || scoresInfo.critic);
+                document.getElementById('studio-display').innerText = getVal(info.studio || info.developer);
+                document.getElementById('engine-display').innerText = getVal(info.engine);
+                
+                document.getElementById('status-display').innerText = getVal(info.status);
+                document.getElementById('hours-display').innerText = getVal(info.episodesTotal || info.hours);
+                document.getElementById('achievements-display').innerText = getVal(info.achievements);
+                document.getElementById('difficulty-display').innerText = getVal(info.difficulty);
+                document.getElementById('deaths-display').innerText = getVal(info.episodesWatched || info.deaths);
+                document.getElementById('source-display').innerText = getVal(info.source || info.pickedBy);
+                
+                if(info.dateWatched && String(info.dateWatched).trim() !== "") {
+                    const [y, m, d] = info.dateWatched.split('-'); document.getElementById('date-display').innerText = `${d}.${m}.${y}`;
+                } else { 
+                    document.getElementById('date-display').innerText = "---"; 
+                }
+                
+                document.getElementById('synopsis-display').innerText = getVal(info.description) !== "---" ? info.description : "Описание отсутствует.";
+                
+                const genreDict = { 'action': 'Экшен', 'adventure': 'Приключения', 'indie': 'Инди', 'rpg': 'РПГ', 'simulation': 'Симулятор', 'strategy': 'Стратегия', 'platformer': 'Платформер', 'shooter': 'Шутер', 'puzzle': 'Головоломка', 'horror': 'Хоррор', 'survival': 'Выживание', 'open world': 'Открытый мир', 'fighting': 'Файтинг', 'racing': 'Гонки', 'sports': 'Спорт', 'casual': 'Казуальная', 'multiplayer': 'Мультиплеер', 'co-op': 'Кооп', 'stealth': 'Стелс', 'metroidvania': 'Метроидвания', 'rogue-like': 'Рогалик', 'rogue-lite': 'Рогалик', 'hack and slash': 'Слэшер', 'visual novel': 'Новелла', 'sandbox': 'Песочница' };
+                if(info.genres) { document.getElementById('genres-display').innerHTML = info.genres.map(g => { const cleanG = g.trim().toLowerCase(); const translated = genreDict[cleanG] || g; return `<span class="genre-badge">${translated}</span>`; }).join(''); } else { document.getElementById('genres-display').innerHTML = ''; }
+
+                const commRes = await fetch(`${FIREBASE_BASE}/games_community_db/${encodeURIComponent(currentFranchiseId)}/ratings.json`, { cache: 'no-store' });
+                if (!commRes.ok) throw new Error(`Ошибка загрузки оценок: HTTP ${commRes.status}`);
+                currentCommunityRatings = (await commRes.json()) || {};
+
+                let chatTotalOvr = 0, chatVis = 0, chatGame = 0, chatSnd = 0, chatTech = 0, chatAtm = 0, chatCount = 0, meData = null;
+                for (const [userId, r] of Object.entries(currentCommunityRatings)) {
+                    chatTotalOvr += safeNum(r.overall);
+                    if (r.theory) { chatVis += safeNum(r.theory.visuals); chatGame += safeNum(r.theory.gameplay); chatSnd += safeNum(r.theory.sound); chatTech += safeNum(r.theory.tech); chatAtm += safeNum(r.theory.atmosphere); }
+                    chatCount++; if (currentUser && userId === currentUser.id) { meData = r; }
+                }
+
+                const chatOvr = chatCount > 0 ? parseFloat((chatTotalOvr / chatCount).toFixed(1)) : 0;
+                const tChat = { visuals: chatCount > 0 ? parseFloat((chatVis/chatCount).toFixed(1)) : 0, gameplay: chatCount > 0 ? parseFloat((chatGame/chatCount).toFixed(1)) : 0, sound: chatCount > 0 ? parseFloat((chatSnd/chatCount).toFixed(1)) : 0, tech: chatCount > 0 ? parseFloat((chatTech/chatCount).toFixed(1)) : 0, atmosphere: chatCount > 0 ? parseFloat((chatAtm/chatCount).toFixed(1)) : 0 };
+                const chatTheoryAvg = calcTheoryAvg(tChat);
+
+                const meOvr = meData ? safeNum(meData.overall) : 0;
+                const tMe = meData && meData.theory ? meData.theory : {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0};
+                const meTheoryAvg = calcTheoryAvg(tMe);
+
+                const strScores = gameData.scores || {}; const strTier = strScores.tier || 'UNRANKED';
+                const tStr = strScores.theory || {visuals:0, gameplay:0, sound:0, tech:0, atmosphere:0};
+                const strTheoryAvg = calcTheoryAvg(tStr);
+
+                window.pageScores = { streamerAvg: strTheoryAvg, streamerTier: strTier, chat: chatOvr, me: meOvr };
+                
+                const renderLegendBox = (boxId, labelId, dotId, scoreId, scoreVal, colorObj) => {
+                    document.getElementById(boxId).style.cssText = getGlassBoxStyle(scoreVal) + ' display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; padding: 8px 5px; border-radius: 8px; flex: 1; backdrop-filter: blur(8px);';
+                    document.getElementById(labelId).style.color = getScoreColor(scoreVal, 1);
+                    document.getElementById(labelId).style.textShadow = getScoreShadow(scoreVal, false);
+                    document.getElementById(dotId).style.background = colorObj.border;
+                    document.getElementById(dotId).style.boxShadow = `0 0 5px ${colorObj.border}`;
+                    document.getElementById(scoreId).innerText = scoreVal > 0 ? scoreVal : '-';
+                    document.getElementById(scoreId).style.cssText = `color: #fff; font-size: 22px; font-weight: bold; margin-bottom: 5px; text-shadow: ${getScoreShadow(scoreVal, false)};`;
+                };
+
+                renderLegendBox('legend-box-streamer', 'legend-label-streamer', 'dot-streamer', 'avg-streamer-score', strTheoryAvg, radarColors[0]);
+                renderLegendBox('legend-box-chat', 'legend-label-chat', 'dot-chat', 'avg-chat-score', chatTheoryAvg, radarColors[1]);
+                renderLegendBox('legend-box-me', 'legend-label-me', 'dot-me', 'avg-viewer-score', meTheoryAvg, radarColors[2]);
+
+                document.getElementById('breakdown-streamer').innerHTML = generateBreakdownHtml(tStr);
+                document.getElementById('breakdown-chat').innerHTML = generateBreakdownHtml(tChat);
+                document.getElementById('breakdown-viewer').innerHTML = generateBreakdownHtml(tMe);
+                
+                if (radarChart) {
+                    radarChart.data.datasets[0].data = [safeNum(tStr.visuals), safeNum(tStr.gameplay), safeNum(tStr.sound), safeNum(tStr.tech), safeNum(tStr.atmosphere)]; 
+                    radarChart.data.datasets[1].data = [safeNum(tChat.visuals), safeNum(tChat.gameplay), safeNum(tChat.sound), safeNum(tChat.tech), safeNum(tChat.atmosphere)]; 
+                    radarChart.data.datasets[2].data = [safeNum(tMe.visuals), safeNum(tMe.gameplay), safeNum(tMe.sound), safeNum(tMe.tech), safeNum(tMe.atmosphere)]; 
+                    const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary').trim();
+                    radarChart.options.scales.r.pointLabels.color = themeColor || '#c4d1b8'; radarChart.update();
+                }
+
+                applyPageVisuals();
+
+                const rateBtn = document.getElementById('rate-title-btn');
+                if (currentUser) {
+                    const isStreamer = currentUser.login.toLowerCase() === ADMIN_USERNAME.toLowerCase(); let hasRated = false;
+                    if (isStreamer && strTheoryAvg > 0) hasRated = true;
+                    if (!isStreamer && currentCommunityRatings[currentUser.id] && safeNum(currentCommunityRatings[currentUser.id].overall) > 0) hasRated = true;
+                    rateBtn.innerText = hasRated ? "Изменить оценку" : "Оценить игру"; rateBtn.style.opacity = "1"; rateBtn.style.pointerEvents = "auto";
+                } else { rateBtn.innerText = "Оценить игру"; rateBtn.style.opacity = "0.5"; rateBtn.style.pointerEvents = "none"; }
+
+                await loadComments(); 
+                loadingScreen.style.display = 'none'; document.getElementById('main-layout').style.display = 'flex';
+            } catch(e) { console.error(e); document.getElementById('loading-screen').innerHTML = `<span style="color:#ff5555;">ОШИБКА: ${e.message}</span><br><br><span style="font-size:16px; color:#a4b09c;">Нажми <b>Ctrl + F5</b>, чтобы сбросить кеш.</span>`; }
         }
 
         window.onload = loadGameData;
