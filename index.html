@@ -658,6 +658,34 @@
                 const safeCoverUrl = f.coverUrl.replace(/'/g, "\\'");
                 const s = f.scores;
 
+                // Проверяем наличие видео в базе данных
+                const gameOriginalData = window.globalCommData ? window.globalCommData[f.id] : null;
+                // Ищем напрямую в сырой базе данных игр
+                fetch(`${FIREBASE_BASE}/games_db/${encodeURIComponent(f.id)}.json`).then(res => res.json()).then(dbGame => {
+                     if (dbGame && (dbGame.videoUrl || (dbGame.videoUrls && dbGame.videoUrls.length > 0))) {
+                        // Ищем ВНУТРЕННЮЮ часть карточки, которая анимируется
+                        const cardFace = document.querySelector(`#card-${safeDomId} .card-face`);
+                        if (cardFace) {
+                            // Создаем значок камеры (подстроенный под высоту статуса)
+                            const badgeHtml = `
+                                <div style="position: absolute; top: 8px; left: 8px; background: rgba(11, 13, 10, 0.6); backdrop-filter: blur(8px); border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.8); z-index: 15; transition: 0.5s;">
+                                    <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: none; stroke: var(--theme-light, #c4d1b8); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;"><path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z" /><rect x="3" y="6" width="12" height="12" rx="2" /></svg>
+                                </div>
+                            `;
+                            cardFace.insertAdjacentHTML('beforeend', badgeHtml);
+                            
+                            // Находим плашку статуса и сдвигаем её в правый угол
+                            const statusBadge = cardFace.querySelector('.ep-badge');
+                            if (statusBadge) {
+                                statusBadge.style.left = 'auto';
+                                statusBadge.style.right = '8px';
+                                statusBadge.style.transform = 'none';
+                            }
+                        }
+                    }
+                });
+
+
                 const valStr = s.streamer[scoreKey] || 0;
                 const valChat = s.chat[scoreKey] || 0;
                 const valMe = s.me[scoreKey] || 0;
