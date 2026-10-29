@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skinwalker Игры - Хаб</title>
     <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/site-header.css">
+    <script src="../shared/site-header.js" defer></script>
+    <script src="../shared/twitch-auth.js" defer></script>
+    <script src="../shared/firebase-stream.js" defer></script>
 
     <style>
         /* ГЛОБАЛЬНЫЕ ЦВЕТА И ХАМЕЛЕОН */
@@ -366,8 +370,8 @@
         const safeNum = (v) => Number(v) || 0;
         const getAvg = (sum, count) => count > 0 ? parseFloat((sum/count).toFixed(1)) : 0;
 
-        function loginTwitch() { window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=`; }
-        function logoutTwitch() { try { localStorage.removeItem('twitch_token'); } catch(e){} location.reload(); }
+        function loginTwitch() { window.SkinwalkerTwitch.login(); }
+        function logoutTwitch() { window.SkinwalkerTwitch.logout(); }
 
         function getUserInfo(username, fallbackTwitchColor) {
             const lowerName = username.toLowerCase();
@@ -389,17 +393,11 @@
             try {
                 const hash = window.location.hash;
                 let token = null;
-                try { token = localStorage.getItem('twitch_token'); } catch(e){}
-
-                if (hash && hash.includes('access_token')) {
-                    token = new URLSearchParams(hash.substring(1)).get('access_token');
-                    try { localStorage.setItem('twitch_token', token); } catch(e){}
-                    window.history.replaceState(null, null, window.location.pathname + window.location.search); 
-                }
+                token = window.SkinwalkerTwitch.consumeRedirectToken();
 
                 if (token) {
                     const res = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${token}` } });
-                    if (res.status === 401) { try { localStorage.removeItem('twitch_token'); } catch(e){} return; }
+                    if (res.status === 401) { window.SkinwalkerTwitch.clearToken(); return; }
                     currentUser = (await res.json()).data[0];
 
                     try {
@@ -896,6 +894,8 @@
         }
          
         initApp();
+        window.SkinwalkerFirebaseStream.subscribe('games-data', `${FIREBASE_BASE}/games_db.json`, initApp);
+        window.SkinwalkerFirebaseStream.subscribe('games-community', `${FIREBASE_BASE}/games_community_db.json`, initApp);
 
         // --- ЛОГИКА ЗАЛА СЛАВЫ (ТОЛЬКО ИГРЫ - ЗАЩИЩЕННАЯ ВЕРСИЯ) ---
         let lbAllUsers = [];
